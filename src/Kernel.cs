@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using Sys = Cosmos.System;
-using Shell;
+using MiniDOS.Shell;
 
 namespace MiniDOS
 {

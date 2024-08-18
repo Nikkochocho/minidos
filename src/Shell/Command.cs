@@ -6,10 +6,11 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Shell
+namespace MiniDOS.Shell
 {
     public class Command
     {
+        private FileSystem.FileSystem _fs = new FileSystem.FileSystem();
         private bool _shutdown = false;
 
         public bool Shutdown { get { return _shutdown; } }
@@ -18,7 +19,7 @@ namespace Shell
         {
             ret = default;
 
-            if ((parms.Length == 2) && (parms[1] != ""))
+            if (parms.Length == 2 && parms[1] != "")
             {
                 ret = parms[1];
 
@@ -30,8 +31,8 @@ namespace Shell
         private bool GetTwoParms(string[] parms, out string ret1, out string ret2)
         {
             ret1 = ret2 = default;
- 
-            if ((parms.Length == 3) && (parms[1] != "") && (parms[2] != ""))
+
+            if (parms.Length == 3 && parms[1] != "" && parms[2] != "")
             {
                 ret1 = parms[1];
                 ret2 = parms[2];
@@ -42,7 +43,7 @@ namespace Shell
         }
 
 
-        public bool Exec(string cmd) 
+        public bool Exec(string cmd)
         {
             var parms = cmd.Split(' ');
 
@@ -52,7 +53,7 @@ namespace Shell
                 {
                     case "dir":
                         {
-                            if(parms.Length == 1)
+                            if (parms.Length == 1)
                             {
                                 return true;
                             }
@@ -71,9 +72,12 @@ namespace Shell
 
                     case "md":
                         {
-                            if (GetOneParm(parms, out string ret))
+                            if (GetOneParm(parms, out string path))
                             {
-                                Console.WriteLine("PARM MD " + ret);
+                                if (!_fs.MkDir(path)) 
+                                {
+                                    Console.WriteLine("Error to create directory");
+                                }
                                 return true;
                             }
                             return false;
@@ -124,7 +128,7 @@ namespace Shell
                         break;
 
                     default:
-                        return (parms[0].Length == 0);
+                        return parms[0].Length == 0;
                 }
             }
             return false;
