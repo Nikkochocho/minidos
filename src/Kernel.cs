@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Text;
 using Sys = Cosmos.System;
 using MiniDOS.Shell;
 
@@ -13,7 +10,8 @@ namespace MiniDOS
         private static string __VERSION = "0.1";
         private static string __AUTHOR = "Lara H. Ferreira";
 
-        private Command cmd = new Command();
+        private FileSystem.FileSystem _fs;
+        private Command cmd;
 
         protected override void BeforeRun()
         {
@@ -23,6 +21,9 @@ namespace MiniDOS
                              "certain conditions.\n\n";
 
             Console.WriteLine(license);
+
+            _fs = new FileSystem.FileSystem();
+            cmd = new Command(_fs);
         }
 
         protected override void Run()

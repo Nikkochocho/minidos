@@ -1,16 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
 
 namespace MiniDOS.Shell
 {
     public class Command
     {
-        private FileSystem.FileSystem _fs = new FileSystem.FileSystem();
+        private readonly FileSystem.FileSystem _fs;
         private bool _shutdown = false;
 
         public bool Shutdown { get { return _shutdown; } }
@@ -42,6 +37,10 @@ namespace MiniDOS.Shell
             return false;
         }
 
+        public Command( FileSystem.FileSystem fs )
+        {
+            _fs = fs;
+        }
 
         public bool Exec(string cmd)
         {
@@ -49,34 +48,34 @@ namespace MiniDOS.Shell
 
             if (parms.Length > 0)
             {
-                switch (parms[0].ToLower())
+                switch (parms[0].Trim().ToLower())
                 {
-                    case "dir":
-                        {
-                            if (parms.Length == 1)
-                            {
-                                return true;
-                            }
-                            return false;
-                        }
-
                     case "cd":
                         {
-                            if (GetOneParm(parms, out string ret))
+                            if (GetOneParm(parms, out string path))
                             {
-                                Console.WriteLine("PARM CD " + ret);
-                                return true;
+                                if (!_fs.ChDir(path, out string error))
+                                {
+                                    Console.WriteLine(error);
+                                }
                             }
-                            return false;
+                            else
+                            {
+                                Console.WriteLine(_fs.CurrentDir);
+                            }
+
+                            return true;
                         }
 
                     case "md":
                         {
                             if (GetOneParm(parms, out string path))
                             {
-                                if (!_fs.MkDir(path)) 
+                                string _path = @$"{_fs.CurrentDir}\{path}";
+
+                                if (!_fs.MkDir(_path, out string error)) 
                                 {
-                                    Console.WriteLine("Error to create directory");
+                                    Console.WriteLine(error);
                                 }
                                 return true;
                             }
@@ -85,9 +84,14 @@ namespace MiniDOS.Shell
 
                     case "rd":
                         {
-                            if (GetOneParm(parms, out string ret))
+                            if (GetOneParm(parms, out string path))
                             {
-                                Console.WriteLine("PARM RD " + ret);
+                                string _path = @$"{_fs.CurrentDir}\{path}";
+
+                                if (!_fs.RmDir(_path, out string error))
+                                {
+                                    Console.WriteLine(error);
+                                }
                                 return true;
                             }
                             return false;
@@ -95,19 +99,57 @@ namespace MiniDOS.Shell
 
                     case "del":
                         {
-                            if (GetOneParm(parms, out string ret))
+                            if (GetOneParm(parms, out string file))
                             {
-                                Console.WriteLine("PARM DEL " + ret);
+                                string _file = @$"{_fs.CurrentDir}\{file}";
+
+                                if (!_fs.DeleteFile(_file, out string error))
+                                {
+                                    Console.WriteLine(error);
+                                }
                                 return true;
+                            }
+                            return false;
+                        }
+
+                    case "type":
+                        {
+                            if (GetOneParm(parms, out string file))
+                            {
+                                string _file = @$"{_fs.CurrentDir}\{file}";
+
+                                if (!_fs.ReadFile(_file, out string error))
+                                {
+                                    Console.WriteLine(error);
+                                }
+                                return true;
+                            }
+                            return false;
+                        }
+
+                    case "dir":
+                        {
+                            if ((parms.Length >= 1) && (parms.Length <= 2))
+                            {
+                                string path = (parms.Length == 2 ? parms[1] : "");
+                                string _path = @$"{_fs.CurrentDir}\{path}";
+
+                                return _fs.GetDir(_path);
                             }
                             return false;
                         }
 
                     case "copy":
                         {
-                            if (GetTwoParms(parms, out string ret1, out string ret2))
+                            if (GetTwoParms(parms, out string source, out string destination))
                             {
-                                Console.WriteLine($"PARM COPY {ret1} {ret2}");
+                                string _source = @$"{_fs.CurrentDir}\{source}";
+                                string _destination = @$"{_fs.CurrentDir}\{destination}";
+
+                                if (!_fs.CopyFile(_source, _destination, out string error))
+                                {
+                                    Console.WriteLine(error);
+                                }
                                 return true;
                             }
                             return false;
@@ -126,6 +168,10 @@ namespace MiniDOS.Shell
                     case "shutdown":
                         _shutdown = true;
                         break;
+
+                    case "cls":
+                        Console.Clear();
+                        return true;
 
                     default:
                         return parms[0].Length == 0;
