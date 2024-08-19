@@ -1,13 +1,19 @@
-﻿using System;
-using System.IO;
+﻿using MiniDOS.FileSystem;
+using System;
+
 
 namespace MiniDOS.Shell
 {
     public class Command
     {
-        private readonly FileSystem.FileSystem _fs;
+        private static string __YEAR = "2024";
+        private static string __VERSION = "0.1";
+        private static string __AUTHOR = "Lara H. Ferreira";
+
+        private readonly FileSystemManager _fs;
         private bool _shutdown = false;
 
+        public string CurrentDir { get { return _fs.CurrentDir; } }
         public bool Shutdown { get { return _shutdown; } }
 
         private bool GetOneParm(string[] parms, out string ret)
@@ -37,9 +43,19 @@ namespace MiniDOS.Shell
             return false;
         }
 
-        public Command( FileSystem.FileSystem fs )
+        public Command( FileSystem.FileSystemManager fs )
         {
             _fs = fs;
+        }
+
+        public void ShowTitle()
+        {
+            string license = $"minidos v{__VERSION}. CopyLeft (c) {__YEAR} by {__AUTHOR}\n" +
+                 "This program comes with ABSOLUTELY NO WARRANTY;\n" +
+                 "This is free software, and you are welcome to redistribute it under\n" +
+                 "certain conditions.\n\n";
+
+            Console.WriteLine(license);
         }
 
         public bool Exec(string cmd)
@@ -71,9 +87,7 @@ namespace MiniDOS.Shell
                         {
                             if (GetOneParm(parms, out string path))
                             {
-                                string _path = @$"{_fs.CurrentDir}\{path}";
-
-                                if (!_fs.MkDir(_path, out string error)) 
+                                if (!_fs.MkDir(path, out string error)) 
                                 {
                                     Console.WriteLine(error);
                                 }
@@ -86,9 +100,7 @@ namespace MiniDOS.Shell
                         {
                             if (GetOneParm(parms, out string path))
                             {
-                                string _path = @$"{_fs.CurrentDir}\{path}";
-
-                                if (!_fs.RmDir(_path, out string error))
+                                if (!_fs.RmDir(path, out string error))
                                 {
                                     Console.WriteLine(error);
                                 }
@@ -101,9 +113,7 @@ namespace MiniDOS.Shell
                         {
                             if (GetOneParm(parms, out string file))
                             {
-                                string _file = @$"{_fs.CurrentDir}\{file}";
-
-                                if (!_fs.DeleteFile(_file, out string error))
+                                if (!_fs.DeleteFile(file, out string error))
                                 {
                                     Console.WriteLine(error);
                                 }
@@ -116,9 +126,7 @@ namespace MiniDOS.Shell
                         {
                             if (GetOneParm(parms, out string file))
                             {
-                                string _file = @$"{_fs.CurrentDir}\{file}";
-
-                                if (!_fs.ReadFile(_file, out string error))
+                                if (!_fs.ReadFile(file, out string error))
                                 {
                                     Console.WriteLine(error);
                                 }
@@ -132,9 +140,8 @@ namespace MiniDOS.Shell
                             if ((parms.Length >= 1) && (parms.Length <= 2))
                             {
                                 string path = (parms.Length == 2 ? parms[1] : "");
-                                string _path = @$"{_fs.CurrentDir}\{path}";
 
-                                return _fs.GetDir(_path);
+                                return _fs.GetDir(path);
                             }
                             return false;
                         }
@@ -143,10 +150,7 @@ namespace MiniDOS.Shell
                         {
                             if (GetTwoParms(parms, out string source, out string destination))
                             {
-                                string _source = @$"{_fs.CurrentDir}\{source}";
-                                string _destination = @$"{_fs.CurrentDir}\{destination}";
-
-                                if (!_fs.CopyFile(_source, _destination, out string error))
+                                if (!_fs.CopyFile(source, destination, out string error))
                                 {
                                     Console.WriteLine(error);
                                 }
@@ -157,9 +161,12 @@ namespace MiniDOS.Shell
 
                     case "ren":
                         {
-                            if (GetTwoParms(parms, out string ret1, out string ret2))
+                            if (GetTwoParms(parms, out string oldFileName, out string newFileName))
                             {
-                                Console.WriteLine($"PARM REN {ret1} {ret2}");
+                                if (!_fs.RenameFile(oldFileName, newFileName, out string error))
+                                {
+                                    Console.WriteLine(error);
+                                }
                                 return true;
                             }
                             return false;
@@ -171,6 +178,10 @@ namespace MiniDOS.Shell
 
                     case "cls":
                         Console.Clear();
+                        return true;
+
+                    case "ver":
+                        ShowTitle();
                         return true;
 
                     default:
