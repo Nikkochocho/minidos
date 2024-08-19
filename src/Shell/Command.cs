@@ -66,6 +66,7 @@ namespace MiniDOS.Shell
             {
                 switch (parms[0].Trim().ToLower())
                 {
+                    case "chdir":
                     case "cd":
                         {
                             if (GetOneParm(parms, out string path))
@@ -83,6 +84,7 @@ namespace MiniDOS.Shell
                             return true;
                         }
 
+                    case "mkdir":
                     case "md":
                         {
                             if (GetOneParm(parms, out string path))
@@ -96,6 +98,7 @@ namespace MiniDOS.Shell
                             return false;
                         }
 
+                    case "rmdir":
                     case "rd":
                         {
                             if (GetOneParm(parms, out string path))
@@ -109,6 +112,7 @@ namespace MiniDOS.Shell
                             return false;
                         }
 
+                    case "rm":
                     case "del":
                         {
                             if (GetOneParm(parms, out string file))
@@ -122,6 +126,7 @@ namespace MiniDOS.Shell
                             return false;
                         }
 
+                    case "cat":
                     case "type":
                         {
                             if (GetOneParm(parms, out string file))
@@ -135,6 +140,7 @@ namespace MiniDOS.Shell
                             return false;
                         }
 
+                    case "ls":
                     case "dir":
                         {
                             if ((parms.Length >= 1) && (parms.Length <= 2))
@@ -146,6 +152,7 @@ namespace MiniDOS.Shell
                             return false;
                         }
 
+                    case "cp":
                     case "copy":
                         {
                             if (GetTwoParms(parms, out string source, out string destination))
@@ -159,6 +166,7 @@ namespace MiniDOS.Shell
                             return false;
                         }
 
+                    case "mv":
                     case "ren":
                         {
                             if (GetTwoParms(parms, out string oldFileName, out string newFileName))
@@ -176,6 +184,7 @@ namespace MiniDOS.Shell
                         _shutdown = true;
                         break;
 
+                    case "clear":
                     case "cls":
                         Console.Clear();
                         return true;
