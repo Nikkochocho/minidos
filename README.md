@@ -1,9 +1,9 @@
 # minidos
 
 ## :pushpin: Table of contents
-- [About](#about)
-- [Prerequisites](#prerequisites)
-- [HowTo](#howto)
+- [About](#bulb-about)
+- [Prerequisites](#dart-prerequisites)
+- [HowTo](#rocket-howto)
 
 ## :bulb: About
 `minidos` is a small DOS implementation, whose functions are quite similar to those of the original MS-DOS, with the difference of covering not only DOS commands but also Linux commands. The project was made using the C# language on Cosmos (C# Open Source Managed Operating System).
