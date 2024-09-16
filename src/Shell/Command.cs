@@ -1,4 +1,6 @@
-﻿using MiniDOS.FileSystem;
+﻿using Cosmos.System.Network.Config;
+using Cosmos.System.Network.IPv4.UDP.DHCP;
+using MiniDOS.FileSystem;
 using System;
 
 
@@ -178,6 +180,32 @@ namespace MiniDOS.Shell
                                 return true;
                             }
                             return false;
+                        }
+
+                    case "ipconfig":
+                        {
+                            if (GetOneParm(parms, out string parm))
+                            {
+                                if (parm == "/renew".ToLower())
+                                {
+                                    using (var xClient = new DHCPClient())
+                                    {
+                                        xClient.SendDiscoverPacket();
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Invalid parameter");
+                                    return false;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine(NetworkConfiguration.CurrentAddress);
+                                string ip = NetworkConfiguration.CurrentAddress == null ? "0.0.0.0": NetworkConfiguration.CurrentAddress.ToString();
+                                Console.WriteLine($"IP Adress.........:{ip}");
+                            }
+                            return true;
                         }
 
                     case "shutdown":
