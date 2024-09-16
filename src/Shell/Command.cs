@@ -145,7 +145,7 @@ namespace MiniDOS.Shell
                         {
                             if ((parms.Length >= 1) && (parms.Length <= 2))
                             {
-                                string path = (parms.Length == 2 ? parms[1] : "");
+                                string path = (parms.Length == 2 ? parms[1] : CurrentDir);
 
                                 return _fs.GetDir(path);
                             }
