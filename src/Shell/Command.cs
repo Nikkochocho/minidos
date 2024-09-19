@@ -201,9 +201,21 @@ namespace MiniDOS.Shell
                             }
                             else
                             {
-                                Console.WriteLine(NetworkConfiguration.CurrentAddress);
-                                string ip = NetworkConfiguration.CurrentAddress == null ? "0.0.0.0": NetworkConfiguration.CurrentAddress.ToString();
-                                Console.WriteLine($"IP Adress.........:{ip}");
+                                if (NetworkConfiguration.CurrentNetworkConfig != null)
+                                {
+                                    string cardType = NetworkConfiguration.CurrentNetworkConfig.Device.CardType == Cosmos.HAL.CardType.Wireless ? "Writeless" : "Ethernet";
+
+                                    Console.WriteLine($"{cardType} adapter: ");
+                                    Console.WriteLine();
+
+                                    Console.WriteLine($"Description.......: {NetworkConfiguration.CurrentNetworkConfig.Device.Name} :");
+                                    Console.WriteLine($"Device............: {NetworkConfiguration.CurrentNetworkConfig.Device.NameID}");
+                                    Console.WriteLine($"IP Adress.........: {NetworkConfiguration.CurrentAddress.ToString()}");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("IP Adress.........: 0.0.0.0");
+                                }
                             }
                             return true;
                         }
