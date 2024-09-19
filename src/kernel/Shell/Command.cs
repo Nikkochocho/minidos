@@ -2,6 +2,8 @@
 using Cosmos.System.Network.IPv4.UDP.DHCP;
 using MiniDOS.FileSystem;
 using System;
+using System.Net.Sockets;
+using System.Text;
 
 
 namespace MiniDOS.Shell
@@ -14,6 +16,7 @@ namespace MiniDOS.Shell
 
         private readonly FileSystemManager _fs;
         private bool _shutdown = false;
+        private TcpClient _client = new TcpClient();
 
         public string CurrentDir { get { return _fs.CurrentDir; } }
         public bool Shutdown { get { return _shutdown; } }
@@ -219,6 +222,50 @@ namespace MiniDOS.Shell
                             }
                             return true;
                         }
+
+                    case "connect":
+                        string serverIp = "192.168.1.205";
+                        int serverPort = 1999;
+
+                        /**Connect to server **/
+                        _client.Connect(serverIp, serverPort);
+                        Console.WriteLine($"Connected to {serverIp}");
+                        NetworkStream stream = _client.GetStream();
+
+                        /** Send data **/
+                        string messageToSend = "Hello from CosmosOS!";
+                        byte[] dataToSend = Encoding.ASCII.GetBytes(messageToSend);
+
+                        Console.WriteLine("SIZE => " + dataToSend.Length);
+                        Console.WriteLine("BUFFERSIZE => " + _client.ReceiveBufferSize);
+
+                        stream.Write(dataToSend, 0, dataToSend.Length);
+
+                        /** Receive data **/
+                        byte[] receivedData = new byte[_client.ReceiveBufferSize];
+                        int count = 0;
+
+                        while (count < 10)
+                        {
+                            int bytesRead = stream.Read(receivedData, 0, dataToSend.Length);
+
+                            if (bytesRead > 0)
+                            {
+                                string receivedMessage = Encoding.ASCII.GetString(receivedData, 0, bytesRead);
+                                Console.WriteLine("MSG ==>" + receivedMessage);
+                                stream.Write(dataToSend, 0, dataToSend.Length);
+                            }
+                            Console.WriteLine("COUNT ==>" + count++);
+                        }
+
+                        /** Close data stream **/
+                        //stream.Close();
+                        //client.Close();
+                        //client.Dispose();
+                        Console.WriteLine("Closed");
+
+                        return true;
+
 
                     case "shutdown":
                         _shutdown = true;

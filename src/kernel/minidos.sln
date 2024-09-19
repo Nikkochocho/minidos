@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35208.52
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "minidos", "minidos.csproj", "{3A8F9B87-BC29-4630-BBB3-E4B7C1B73756}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "minidos", "minidos.csproj", "{3A8F9B87-BC29-4630-BBB3-E4B7C1B73756}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RPCServer", "..\RPCServer\RPCServer.csproj", "{7798704F-A68C-4069-A304-688821AE5AFD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{3A8F9B87-BC29-4630-BBB3-E4B7C1B73756}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3A8F9B87-BC29-4630-BBB3-E4B7C1B73756}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3A8F9B87-BC29-4630-BBB3-E4B7C1B73756}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7798704F-A68C-4069-A304-688821AE5AFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7798704F-A68C-4069-A304-688821AE5AFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7798704F-A68C-4069-A304-688821AE5AFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7798704F-A68C-4069-A304-688821AE5AFD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
