@@ -51,13 +51,6 @@ namespace RPCLibrary.Command
             {
                 data.Data = buffer;
                 data.EndOfData = (bytesRead != __BLOCK_SIZE);
-                //ret = __client.Send(data);
-
-                if (!ret)
-                {
-                    Console.WriteLine("Error to send data");
-                    break;
-                }
 
                 if (!data.EndOfData)
                 {
@@ -67,6 +60,14 @@ namespace RPCLibrary.Command
                 {
                     // Clean unused extra byte array
                     Array.Clear(buffer, bytesRead, (buffer.Length - bytesRead));
+                }
+
+                //ret = __client.Send(data);
+
+                if (!ret)
+                {
+                    Console.WriteLine("Error to send data");
+                    break;
                 }
 
                 // TODO: REMOVER WriteLine abaixo
