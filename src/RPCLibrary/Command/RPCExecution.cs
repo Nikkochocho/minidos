@@ -1,11 +1,5 @@
 ﻿using RPCLibrary.Client;
 using RPCLibrary.DataProtocol;
-using System;
-using System.Collections.Generic;
-using System.IO.Enumeration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RPCLibrary.Command
 {
@@ -23,11 +17,7 @@ namespace RPCLibrary.Command
         public bool Execute(string filepath, string host, int port)
         {
             bool ret = true; //__client.Connect(host, port);
-            RPCData data = new RPCData()
-            {
-                Type = RPCData.TYPE_LUA_EXECUTABLE,
-                EndOfData = false,
-            };
+            FileStream? fs;
 
             if (!ret)
             {
@@ -35,43 +25,56 @@ namespace RPCLibrary.Command
                 return false;
             }
 
-            // Abrir arquivo.
-            
-            using (FileStream fs = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.None))
+            // Open file.
+
+            try
             {
-                byte[] buffer = new byte[__BLOCK_SIZE];
-                int bytesRead = fs.Read(buffer, 0, buffer.Length);
-
-                //loop leitura do arquivo
-
-                if (bytesRead > 0)
-                {
-                    while(!data.EndOfData) 
-                    {
-                        data.Data = buffer;
-                        data.EndOfData = (bytesRead != __BLOCK_SIZE);
-                        //ret = __client.Send(data);
-
-                        if (!ret)
-                        {
-                            Console.WriteLine("Error to send data");
-                            break;
-                        }
-
-                        if (!data.EndOfData) 
-                        {
-                            bytesRead = fs.Read(buffer, 0, buffer.Length);
-                        }
-
-                        Console.WriteLine(System.Text.Encoding.Default.GetString(data.Data));
-                    }
-                }
-                fs.Close();
+                fs = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.None);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
             }
 
+            byte[] buffer = new byte[__BLOCK_SIZE];
+            int bytesRead = fs.Read(buffer, 0, buffer.Length);
+            RPCData data = new RPCData()
+            {
+                Type = RPCData.TYPE_LUA_EXECUTABLE,
+                EndOfData = (bytesRead <= 0),
+            };
+
+            // Data read loop
+
+            while (!data.EndOfData)
+            {
+                data.Data = buffer;
+                data.EndOfData = (bytesRead != __BLOCK_SIZE);
+                //ret = __client.Send(data);
+
+                if (!ret)
+                {
+                    Console.WriteLine("Error to send data");
+                    break;
+                }
+
+                if (!data.EndOfData)
+                {
+                    bytesRead = fs.Read(buffer, 0, buffer.Length);
+                }
+                else
+                {
+                    // Clean unused extra byte array
+                    Array.Clear(buffer, bytesRead, (buffer.Length - bytesRead));
+                }
+
+                // TODO: REMOVER WriteLine abaixo
+                Console.WriteLine(System.Text.Encoding.Default.GetString(data.Data));
+            }
+            fs.Close();
 
             return ret;
         }
-
     }
 }
