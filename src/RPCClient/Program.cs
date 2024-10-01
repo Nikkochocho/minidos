@@ -1,4 +1,4 @@
-﻿using RPCLibrary.Client;
+﻿using RPCLibrary.Command;
 using RPCLibrary.DataProtocol;
 
 namespace RPCClientApp
@@ -7,18 +7,22 @@ namespace RPCClientApp
     {
         static void Main(string[] args)
         {
-            RPCClient   client = new RPCClient();
-            RPCData data = new RPCData()
-            {
-                Type = RPCData.TYPE_LUA_EXECUTABLE,
-                EndOfData = true,
-                Data = System.Text.Encoding.UTF8.GetBytes("TESTE".ToCharArray())
-            };
+            RPCExecution exec = new RPCExecution();
 
-            client.Connect("127.0.0.1", 1999);
-            client.Send(data);
+            string filepath = "D:\\Projects\\C_SHARP\\minidos\\src\\RPCClient\\Resources\\teste.txt";
+            string host = "localhost";
+            int port = 1999;
 
             Console.WriteLine("RPC Client started");
+
+            if(exec.Execute(filepath, host, port))
+            {
+                Console.WriteLine("Execution worked sucessfully");
+            }
+            else
+            {
+                Console.WriteLine("Execution failed");
+            }
 
             Console.ReadLine();
 
