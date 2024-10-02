@@ -79,8 +79,20 @@ namespace RPCLibrary.Server
                     Task.Factory.StartNew(() =>
                     {
                         // TODO: LUA RESPONSE
+                        string filename = "D:\\Projects\\C_SHARP\\minidos\\src\\RPCServer\\Resources\\teste2.txt";
+                        FileStream fs;
 
-                        if (Read(client, out RPCData data))
+                        try
+                        {
+                            fs = File.Open(filename, FileMode.Create, FileAccess.Write, FileShare.Write);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                            return;
+                        }
+
+                        while (Read(client, out RPCData data))
                         {
                             Console.WriteLine("TYPE -> " + data.Type);
                             Console.WriteLine("END OF DATA -> " + data.EndOfData);
@@ -89,12 +101,11 @@ namespace RPCLibrary.Server
                             if (data.Data != null)
                             {
                                 Console.WriteLine("DATA -> " + System.Text.Encoding.Default.GetString(data.Data));
+                                fs.Write(data.Data);
+                                fs.Flush();
                             }
                         }
-                        else
-                        {
-                            Console.WriteLine("Error reading data");
-                        }
+                        fs.Close();
                     });
                 }
 

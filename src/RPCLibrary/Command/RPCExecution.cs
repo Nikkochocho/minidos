@@ -16,7 +16,7 @@ namespace RPCLibrary.Command
 
         public bool Execute(string filepath, string host, int port)
         {
-            bool ret = true; //__client.Connect(host, port);
+            bool ret = __client.Connect(host, port);
             FileStream? fs;
 
             if (!ret)
@@ -59,10 +59,12 @@ namespace RPCLibrary.Command
                 else
                 {
                     // Clean unused extra byte array
-                    Array.Clear(buffer, bytesRead, (buffer.Length - bytesRead));
+                    data.DataSize = bytesRead;
+                    Array.Copy(buffer, data.Data, bytesRead);
+                    //Array.Clear(buffer, bytesRead, (buffer.Length - bytesRead));
                 }
 
-                //ret = __client.Send(data);
+                ret = __client.Send(data);
 
                 if (!ret)
                 {
