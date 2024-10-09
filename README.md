@@ -19,3 +19,4 @@ In order to use the minidos application, it is necessary to obtain the following
 ## :rocket: HowTo
 To get the `minidos` software runnning, you must first install the latest version of Visual Studio and a .NET Core 6.0 or higher. Then, you will also need to acquire a virtual machine (in this example, we will be using VMware Player, but Cosmos also support Virtual Box and VMware Workstation). Lastly, it is necessary to install the Cosmos OS SDK and the NLua package. Both are linked in the [Prerequisites](#prerequisites) subsection.
 
+- End
