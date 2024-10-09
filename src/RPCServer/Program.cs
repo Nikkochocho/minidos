@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using RPCLibrary.Server;
 
 namespace RPCServerApp
 {

@@ -1,10 +1,10 @@
 ﻿
-using System.Reflection;
 
 namespace RPCLibrary.DataProtocol
 {
     public record RPCData
     {
+        public const int TYPE_LUA_FILENAME = 0;
         public const int TYPE_LUA_EXECUTABLE = 1;
 
         public int Type { get; set; }

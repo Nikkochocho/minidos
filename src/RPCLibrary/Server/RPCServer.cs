@@ -8,6 +8,7 @@ namespace RPCLibrary.Server
 {
     public class RPCServer
     {
+        private string __DEST_PATH = "D:\\Projects\\C_SHARP\\minidos\\src\\RPCServer\\Resources";
         private TcpListener __server;
         private bool __listening;
 
@@ -79,7 +80,9 @@ namespace RPCLibrary.Server
                     Task.Factory.StartNew(() =>
                     {
                         // TODO: LUA RESPONSE
-                        string filename = "D:\\Projects\\C_SHARP\\minidos\\src\\RPCServer\\Resources\\teste2.txt";
+                        string tempFileName = Path.GetRandomFileName();
+                        string filename = $"{__DEST_PATH}\\{tempFileName}";
+                        string luaFileName = null;
                         FileStream fs;
 
                         try
@@ -94,18 +97,30 @@ namespace RPCLibrary.Server
 
                         while (Read(client, out RPCData data))
                         {
-                            Console.WriteLine("TYPE -> " + data.Type);
-                            Console.WriteLine("END OF DATA -> " + data.EndOfData);
-                            Console.WriteLine("DATA SIZE -> " + data.DataSize);
-
                             if (data.Data != null)
                             {
-                                Console.WriteLine("DATA -> " + System.Text.Encoding.Default.GetString(data.Data));
+                                if (data.Type == RPCData.TYPE_LUA_FILENAME)
+                                {
+                                    luaFileName = System.Text.Encoding.Default.GetString(data.Data);
+                                    continue;
+                                }
+
                                 fs.Write(data.Data);
                                 fs.Flush();
                             }
                         }
                         fs.Close();
+
+                        if (luaFileName != null)
+                        {
+                            string destination = $"{__DEST_PATH}\\{luaFileName}";
+
+                            System.IO.File.Move(filename, destination);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Error lua file name not provided");
+                        }
                     });
                 }
 

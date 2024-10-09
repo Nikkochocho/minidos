@@ -1,5 +1,4 @@
 ﻿using RPCLibrary.Command;
-using RPCLibrary.DataProtocol;
 
 namespace RPCClientApp
 {
