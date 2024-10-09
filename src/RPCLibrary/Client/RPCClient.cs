@@ -1,7 +1,5 @@
 ﻿using RPCLibrary.DataProtocol;
-using System;
 using System.Net.Sockets;
-using System.Text;
 
 namespace RPCLibrary.Client
 {
