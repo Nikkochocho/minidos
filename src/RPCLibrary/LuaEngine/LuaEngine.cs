@@ -1,4 +1,5 @@
-﻿using NLua;
+﻿using KeraLua;
+using NLua;
 using RPCLibrary.Client;
 using RPCLibrary.DataProtocol;
 using System.Net.Sockets;
@@ -8,7 +9,7 @@ namespace RPCLibrary
 {
     public class LuaEngine
     {
-        private Lua _state = new Lua();
+        private NLua.Lua _state = new NLua.Lua();
         private readonly TcpClient _tcpClient;
         private bool isScriptRunning = false;
 
@@ -21,6 +22,16 @@ namespace RPCLibrary
                                     typeof(LuaEngine).GetMethod(nameof(LuaEngine._print),
                                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
             _state.DoString(@"print = function(...) _print({...}); end");
+            _state.RegisterFunction(nameof(_wait),
+                                    this,
+                                    typeof(LuaEngine).GetMethod(nameof(LuaEngine._wait),
+                                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
+            _state.DoString(@"wait = function(timeout) _wait(timeout); end");
+            _state.RegisterFunction(nameof(_clear),
+                                    this,
+                                    typeof(LuaEngine).GetMethod(nameof(LuaEngine._clear),
+                                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
+            _state.DoString(@"clear = function() _clear(); end");
         }
 
         public bool RunScript(string fileName)
@@ -64,6 +75,17 @@ namespace RPCLibrary
             Console.WriteLine(text);
 
             Send(text);
+        }
+
+        private void _wait(int timeout)
+        {
+            Thread.Sleep((int) timeout);
+        }
+
+        private void _clear()
+        {
+            Console.Clear();
+            Send(RPCData.ANSI_CLEAR_SCREEN_CODE);
         }
     }
 }

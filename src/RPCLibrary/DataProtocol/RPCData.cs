@@ -4,6 +4,9 @@ namespace RPCLibrary.DataProtocol
 {
     public record RPCData
     {
+        // ANSI Terminal codes
+        public const string ANSI_CLEAR_SCREEN_CODE = "\033[2J";
+
         public const int DEFAULT_BLOCK_SIZE = 512;
 
         public const int TYPE_LUA_FILENAME = 0;

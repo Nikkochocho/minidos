@@ -1,5 +1,6 @@
 ﻿using RPCLibrary.Client;
 using RPCLibrary.DataProtocol;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace RPCLibrary.Command
@@ -88,7 +89,19 @@ namespace RPCLibrary.Command
             // Executable screen console handling
             while(__client.Recv(out data))
             {
-                Console.WriteLine(System.Text.Encoding.Default.GetString(data.Data));
+                string strData = Encoding.Default.GetString(data.Data);
+
+                switch(strData) // Handle ANSI escape commands
+
+                {
+                    case RPCData.ANSI_CLEAR_SCREEN_CODE: 
+                        Console.Clear(); 
+                        break;
+
+                    default:
+                        Console.WriteLine(strData);
+                        break;
+                }
 
                 if (data.EndOfData)
                 {
