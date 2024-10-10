@@ -96,5 +96,10 @@ namespace RPCLibrary.Client
 
             return false;
         }
+
+        public bool Recv(out RPCData data)
+        {
+            return Recv(__tcpClient, out data);
+        }
     }
 }

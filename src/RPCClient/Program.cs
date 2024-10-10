@@ -8,7 +8,7 @@ namespace RPCClientApp
         {
             RPCExecution exec = new RPCExecution();
 
-            string filepath = "D:\\Projects\\C_SHARP\\minidos\\src\\RPCClient\\Resources\\teste.txt";
+            string filepath = "D:\\Projects\\C_SHARP\\minidos\\src\\RPCClient\\Resources\\lua_sample.lua";
             string host = "localhost";
             int port = 1999;
 
