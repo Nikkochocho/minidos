@@ -1,13 +1,13 @@
 ﻿using RPCLibrary.Client;
 using RPCLibrary.DataProtocol;
+using System.Linq.Expressions;
 using System.Text;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace RPCLibrary.Command
 {
     public class RPCExecution
     {
-        private const int __BLOCK_SIZE = 512;
-
         private readonly RPCClient __client;
 
         public RPCExecution() 
@@ -40,7 +40,7 @@ namespace RPCLibrary.Command
 
             string fileName = Path.GetFileName(filepath);
             byte[] aFileName = Encoding.ASCII.GetBytes(fileName);
-            byte[] buffer = new byte[__BLOCK_SIZE];
+            byte[] buffer = new byte[RPCData.DEFAULT_BLOCK_SIZE];
             int bytesRead = aFileName.Length;           
             RPCData data = new RPCData()
             {
@@ -59,17 +59,17 @@ namespace RPCLibrary.Command
                 return false;
             }
 
-            bytesRead = __BLOCK_SIZE;
+            bytesRead = RPCData.DEFAULT_BLOCK_SIZE;
             data.Type = RPCData.TYPE_LUA_EXECUTABLE;
             data.DataSize = bytesRead;
             data.Data = buffer;
 
-            // Data read loop
+            // Read Lua executable script on 512 bytes chunks and send to execute on server
 
             while (!data.EndOfData)
             {
                 bytesRead = fs.Read(buffer, 0, buffer.Length);
-                data.EndOfData = (bytesRead != __BLOCK_SIZE);
+                data.EndOfData = (bytesRead != RPCData.DEFAULT_BLOCK_SIZE);
 
                 if (data.EndOfData)
                 {
@@ -85,13 +85,53 @@ namespace RPCLibrary.Command
                     Console.WriteLine("Error to send data");
                     break;
                 }
-
-                // TODO: REMOVER WriteLine abaixo
-                Console.WriteLine(System.Text.Encoding.Default.GetString(data.Data));
             }
+
+            // Receive and process client responses
+            if (ret)
+            {
+                ReceiveClientResponse();
+            }
+
             fs.Close();
 
             return ret;
+        }
+
+        private void ReceiveClientResponse()
+        {
+            // Receive and process client responses
+            while (__client.Recv(out RPCData data))
+            {
+                switch (data.Type)
+                {
+                    case RPCData.TYPE_LUA_SCREEN_RESPONSE:
+                        string strData = Encoding.Default.GetString(data.Data);
+
+                        ScreenResponseHandling(strData);
+                        break;
+                }
+
+                if (data.EndOfData)
+                {
+                    break;
+                }
+            }
+        }
+
+        private void ScreenResponseHandling(string data)
+        {
+            switch (data) // Handle ANSI escape commands
+
+            {
+                case RPCData.ANSI_CLEAR_SCREEN_CODE:
+                    Console.Clear();
+                    break;
+
+                default:
+                    Console.WriteLine(data);
+                    break;
+            }
         }
     }
 }

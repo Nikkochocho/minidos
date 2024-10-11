@@ -77,13 +77,12 @@ namespace RPCLibrary.Server
 
                     Console.WriteLine("Handling new connection");
 
-                    Task.Factory.StartNew(() =>
+                    _ = Task.Factory.StartNew(() =>
                     {
-                        // TODO: LUA RESPONSE
                         string tempFileName = Path.GetRandomFileName();
                         string filename = $"{__DEST_PATH}\\{tempFileName}";
                         string luaFileName = null;
-                        FileStream fs;
+                        FileStream? fs;
 
                         try
                         {
@@ -97,30 +96,56 @@ namespace RPCLibrary.Server
 
                         while (Read(client, out RPCData data))
                         {
+                            // Send response based on client packaet request type
                             if (data.Data != null)
                             {
-                                if (data.Type == RPCData.TYPE_LUA_FILENAME)
+                                switch (data.Type)
                                 {
-                                    luaFileName = System.Text.Encoding.Default.GetString(data.Data);
-                                    continue;
+                                    case RPCData.TYPE_LUA_FILENAME:
+                                        luaFileName = System.Text.Encoding.Default.GetString(data.Data);
+                                        continue;
+                                    case RPCData.TYPE_LUA_EXECUTABLE:
+                                        fs?.Write(data.Data);
+                                        fs?.Flush();
+                                        break;
                                 }
+                            }
 
-                                fs.Write(data.Data);
-                                fs.Flush();
+                            // Send Lua executable Screen content to client
+                            if (data.EndOfData)
+                            {
+                                if (luaFileName != null)
+                                {
+                                    fs?.Close();
+                                    fs = null;
+
+                                    try
+                                    {
+                                        string destination = $"{__DEST_PATH}\\{luaFileName}";
+                                        LuaEngine lua = new LuaEngine(client);
+
+                                        System.IO.File.Move(filename, destination, true);
+
+                                        if (!lua.RunScript(destination))
+                                        {
+                                            Console.WriteLine($"Error to executing file {destination}");
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Console.WriteLine(ex.Message);
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Error lua file name not provided");
+                                }
                             }
                         }
-                        fs.Close();
 
-                        if (luaFileName != null)
-                        {
-                            string destination = $"{__DEST_PATH}\\{luaFileName}";
+                        fs?.Close();
 
-                            System.IO.File.Move(filename, destination);
-                        }
-                        else
-                        {
-                            Console.WriteLine("Error lua file name not provided");
-                        }
+                        Console.WriteLine("Client connection handling finished");
                     });
                 }
 
