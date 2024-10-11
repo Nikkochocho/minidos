@@ -5,9 +5,11 @@ namespace RPCServerApp
 {
     class Program
     {
+        private static string __DESTINATION_PATH = "D:\\Projects\\C_SHARP\\minidos\\src\\RPCServer\\Resources";
+
         static void Main(string[] args)
         {
-            RPCLibrary.Server.RPCServer server = new RPCLibrary.Server.RPCServer(IPAddress.Any, 1999);
+            RPCLibrary.Server.RPCServer server = new RPCLibrary.Server.RPCServer(IPAddress.Any, 1999, __DESTINATION_PATH);
 
             if (server.Start())
             {
