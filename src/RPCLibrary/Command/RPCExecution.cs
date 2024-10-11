@@ -2,6 +2,7 @@
 using RPCLibrary.DataProtocol;
 using System.Linq.Expressions;
 using System.Text;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace RPCLibrary.Command
 {
@@ -63,7 +64,7 @@ namespace RPCLibrary.Command
             data.DataSize = bytesRead;
             data.Data = buffer;
 
-            // Data read loop
+            // Read Lua executable script on 512 bytes chunks and send to execute on server
 
             while (!data.EndOfData)
             {
@@ -86,20 +87,28 @@ namespace RPCLibrary.Command
                 }
             }
 
-            // Executable screen console handling
-            while(__client.Recv(out data))
+            // Receive and process client responses
+            if (ret)
             {
-                string strData = Encoding.Default.GetString(data.Data);
+                ReceiveClientResponse();
+            }
 
-                switch(strData) // Handle ANSI escape commands
+            fs.Close();
 
+            return ret;
+        }
+
+        private void ReceiveClientResponse()
+        {
+            // Receive and process client responses
+            while (__client.Recv(out RPCData data))
+            {
+                switch (data.Type)
                 {
-                    case RPCData.ANSI_CLEAR_SCREEN_CODE: 
-                        Console.Clear(); 
-                        break;
+                    case RPCData.TYPE_LUA_SCREEN_RESPONSE:
+                        string strData = Encoding.Default.GetString(data.Data);
 
-                    default:
-                        Console.WriteLine(strData);
+                        ScreenResponseHandling(strData);
                         break;
                 }
 
@@ -108,10 +117,21 @@ namespace RPCLibrary.Command
                     break;
                 }
             }
+        }
 
-            fs.Close();
+        private void ScreenResponseHandling(string data)
+        {
+            switch (data) // Handle ANSI escape commands
 
-            return ret;
+            {
+                case RPCData.ANSI_CLEAR_SCREEN_CODE:
+                    Console.Clear();
+                    break;
+
+                default:
+                    Console.WriteLine(data);
+                    break;
+            }
         }
     }
 }

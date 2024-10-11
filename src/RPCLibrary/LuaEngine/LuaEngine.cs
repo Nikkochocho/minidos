@@ -44,7 +44,7 @@ namespace RPCLibrary
             return true;
         }
 
-        private void Send(string text)
+        private void SendScreenResponse(string text)
         {
             RPCClient rpcClient = new RPCClient(_tcpClient);
             byte[] buffer = Encoding.ASCII.GetBytes(text);
@@ -74,7 +74,7 @@ namespace RPCLibrary
             var text = strBuilder.ToString();
             Console.WriteLine(text);
 
-            Send(text);
+            SendScreenResponse(text);
         }
 
         private void _wait(int timeout)
@@ -85,7 +85,7 @@ namespace RPCLibrary
         private void _clear()
         {
             Console.Clear();
-            Send(RPCData.ANSI_CLEAR_SCREEN_CODE);
+            SendScreenResponse(RPCData.ANSI_CLEAR_SCREEN_CODE);
         }
     }
 }

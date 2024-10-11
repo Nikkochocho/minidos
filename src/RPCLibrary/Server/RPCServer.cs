@@ -96,18 +96,22 @@ namespace RPCLibrary.Server
 
                         while (Read(client, out RPCData data))
                         {
+                            // Send response based on client packaet request type
                             if (data.Data != null)
                             {
-                                if (data.Type == RPCData.TYPE_LUA_FILENAME)
+                                switch (data.Type)
                                 {
-                                    luaFileName = System.Text.Encoding.Default.GetString(data.Data);
-                                    continue;
+                                    case RPCData.TYPE_LUA_FILENAME:
+                                        luaFileName = System.Text.Encoding.Default.GetString(data.Data);
+                                        continue;
+                                    case RPCData.TYPE_LUA_EXECUTABLE:
+                                        fs?.Write(data.Data);
+                                        fs?.Flush();
+                                        break;
                                 }
-
-                                fs?.Write(data.Data);
-                                fs?.Flush();
                             }
 
+                            // Send Lua executable Screen content to client
                             if (data.EndOfData)
                             {
                                 if (luaFileName != null)
