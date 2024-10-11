@@ -104,9 +104,11 @@ namespace RPCLibrary.Server
                                 switch (data.Type)
                                 {
                                     case RPCData.TYPE_LUA_FILENAME:
+                                        Console.WriteLine("RECEIVED LUA EXECUTABLE FILE NAME");
                                         luaFileName = System.Text.Encoding.Default.GetString(data.Data);
                                         continue;
                                     case RPCData.TYPE_LUA_EXECUTABLE:
+                                        Console.WriteLine("RECEIVING LUA EXECUTABLE FILE CONTENT");
                                         fs?.Write(data.Data);
                                         fs?.Flush();
 
