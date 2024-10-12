@@ -5,6 +5,7 @@ namespace RPCClientApp
 {
     class Program
     {
+        private const string __RPC_CLIENT_APP = "RPC CLIENT";
         private const string __EXECUTE_LUA = "exec";
         private const string __EXIT = "exit";
         private const string __HELP = "help";
@@ -17,6 +18,7 @@ namespace RPCClientApp
         {
             bool exit = false;
 
+            Console.Title = __RPC_CLIENT_APP;
             Console.WriteLine("RPC Client started");
             Console.WriteLine();
             Console.Write("type ");

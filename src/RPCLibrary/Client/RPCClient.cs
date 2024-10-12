@@ -7,6 +7,8 @@ namespace RPCLibrary.Client
     {
         private readonly TcpClient __tcpClient;
 
+        public bool EnableAllExceptions { get; set; } = false;
+
         public RPCClient()
         {
             __tcpClient = new TcpClient();
@@ -91,7 +93,11 @@ namespace RPCLibrary.Client
             catch (Exception ex)
             {
                 data = default;
-                Console.WriteLine(ex.Message);
+
+                if (ex.GetType() != typeof(EndOfStreamException) && EnableAllExceptions)
+                {
+                    Console.WriteLine(ex.Message);
+                }
             }
 
             return false;
