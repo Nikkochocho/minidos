@@ -1,9 +1,7 @@
 ﻿using Cosmos.System.Network.Config;
 using Cosmos.System.Network.IPv4.UDP.DHCP;
-using MiniDOS.FileSystem;
+using RPCLibrary.Command;
 using System;
-using System.Net.Sockets;
-using System.Text;
 
 
 namespace MiniDOS.Shell
@@ -14,9 +12,9 @@ namespace MiniDOS.Shell
         private static string __VERSION = "0.1";
         private static string __AUTHOR = "Lara H. Ferreira";
 
-        private readonly FileSystemManager _fs;
+        private readonly FileSystem.FileSystemManager _fs;
         private bool _shutdown = false;
-        private TcpClient _client = new TcpClient();
+        private RPCExecution _exec = new RPCExecution();
 
         public string CurrentDir { get { return _fs.CurrentDir; } }
         public bool Shutdown { get { return _shutdown; } }
@@ -47,6 +45,20 @@ namespace MiniDOS.Shell
             }
             return false;
         }
+        private bool GetThreeParms(string[] parms, out string ret1, out string ret2, out string ret3)
+        {
+            ret1 = ret2 = ret3 = default;
+
+            if (parms.Length == 4 && parms[1] != "" && parms[2] != "" && parms[3] != "")
+            {
+                ret1 = parms[1];
+                ret2 = parms[2];
+                ret3 = parms[3];
+
+                return true;
+            }
+            return false;
+        }
 
         public Command( FileSystem.FileSystemManager fs )
         {
@@ -69,12 +81,15 @@ namespace MiniDOS.Shell
 
             if (parms.Length > 0)
             {
-                switch (parms[0].Trim().ToLower())
+                string command = parms[0].Trim().ToLower();
+
+                switch (command)
                 {
+                    case "pwd":
                     case "chdir":
                     case "cd":
                         {
-                            if (GetOneParm(parms, out string path))
+                            if (!command.Equals("pwd") && GetOneParm(parms, out string path))
                             {
                                 if (!_fs.ChDir(path, out string error))
                                 {
@@ -223,49 +238,38 @@ namespace MiniDOS.Shell
                             return true;
                         }
 
-                    case "connect":
-                        string serverIp = "192.168.1.205";
-                        int serverPort = 1999;
-
-                        /**Connect to server **/
-                        _client.Connect(serverIp, serverPort);
-                        Console.WriteLine($"Connected to {serverIp}");
-                        NetworkStream stream = _client.GetStream();
-
-                        /** Send data **/
-                        string messageToSend = "Hello from CosmosOS!";
-                        byte[] dataToSend = Encoding.ASCII.GetBytes(messageToSend);
-
-                        Console.WriteLine("SIZE => " + dataToSend.Length);
-                        Console.WriteLine("BUFFERSIZE => " + _client.ReceiveBufferSize);
-
-                        stream.Write(dataToSend, 0, dataToSend.Length);
-
-                        /** Receive data **/
-                        byte[] receivedData = new byte[_client.ReceiveBufferSize];
-                        int count = 0;
-
-                        while (count < 10)
+                    case "exec":
                         {
-                            int bytesRead = stream.Read(receivedData, 0, dataToSend.Length);
-
-                            if (bytesRead > 0)
+                            if (GetThreeParms(parms, out string hostname, out string port, out string filename))
                             {
-                                string receivedMessage = Encoding.ASCII.GetString(receivedData, 0, bytesRead);
-                                Console.WriteLine("MSG ==>" + receivedMessage);
-                                stream.Write(dataToSend, 0, dataToSend.Length);
+                                string absFileNamePath = _fs.GetAbsolutePath(filename);
+
+                                if (_exec.Execute(absFileNamePath, hostname, int.Parse(port)))
+                                {
+                                    Console.WriteLine("Execution sucessfull");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Execution failed");
+                                }
+
+                                return true;
                             }
-                            Console.WriteLine("COUNT ==>" + count++);
+                            return false;
                         }
 
-                        /** Close data stream **/
-                        //stream.Close();
-                        //client.Close();
-                        //client.Dispose();
-                        Console.WriteLine("Closed");
+                    //case "ftp_server":
+                    //case "ftpserver":
+                    //    {
+                    //        var fs = new CosmosVFS();
+                    //        VFSManager.RegisterVFS(fs);
 
-                        return true;
-
+                    //        using (var xServer = new FtpServer(fs, "0:\\"))
+                    //        {
+                    //            /** Listen for new FTP client connections **/
+                    //            FtpServer.Listen();
+                    //        }
+                    //    }
 
                     case "shutdown":
                         _shutdown = true;

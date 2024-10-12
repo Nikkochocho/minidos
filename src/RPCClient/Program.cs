@@ -1,5 +1,4 @@
 ﻿using RPCLibrary.Command;
-using System.Drawing;
 
 namespace RPCClientApp
 {

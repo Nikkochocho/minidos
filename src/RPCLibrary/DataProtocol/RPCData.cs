@@ -2,7 +2,7 @@
 
 namespace RPCLibrary.DataProtocol
 {
-    public record RPCData
+    public class RPCData
     {
         // ANSI Terminal codes
         public const string ANSI_CLEAR_SCREEN_CODE = "\033[2J";

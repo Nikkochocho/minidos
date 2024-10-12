@@ -32,7 +32,9 @@ namespace RPCLibrary.Command
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine($"File open exception {ex.Message}");
+                __client.Close();
+
                 return false;
             }
 
@@ -47,15 +49,18 @@ namespace RPCLibrary.Command
                 Data = aFileName 
             };
 
-
             // Send file name
             ret = __client.Send(data);
 
             if (!ret)
             {
                 Console.WriteLine("Error to send data");
+                __client.Close();
+
                 return false;
             }
+
+            Console.WriteLine($"SENT");
 
             bytesRead = RPCData.DEFAULT_BLOCK_SIZE;
             data.Type = RPCData.TYPE_LUA_EXECUTABLE;
@@ -92,6 +97,7 @@ namespace RPCLibrary.Command
             }
 
             fs.Close();
+            __client.Close();
 
             return ret;
         }
