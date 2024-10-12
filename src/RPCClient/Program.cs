@@ -11,7 +11,7 @@ namespace RPCClientApp
 
         private static string __hostname = "127.0.0.1";
         private static string __port = "1999";
-        private static string __filename = "D:\\Projects\\C_SHARP\\minidos\\src\\RPCClient\\Resources\\lua_sample.lua";
+        private static string __filename = "../../../Resources/lua_sample.lua";
 
         static void Main(string[] args)
         {

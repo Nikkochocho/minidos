@@ -81,7 +81,7 @@ namespace RPCLibrary.Server
                     _ = Task.Factory.StartNew(() =>
                     {
                         string tempFileName = Path.GetRandomFileName();
-                        string filename = $"{__destinationPath}\\{tempFileName}";
+                        string filename = $"{__destinationPath}/{tempFileName}";
                         string luaFileName = null;
                         FileStream? fs;
                         bool exit = false;
@@ -120,7 +120,7 @@ namespace RPCLibrary.Server
                                                 fs?.Close();
                                                 fs = null;
 
-                                                string destination = $"{__destinationPath}\\{luaFileName}";
+                                                string destination = $"{__destinationPath}/{luaFileName}";
                                                 System.IO.File.Move(filename, destination, true);
 
                                                 if (!ExecLuaScript(client, destination))

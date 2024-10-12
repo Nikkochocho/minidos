@@ -5,7 +5,7 @@ namespace RPCServerApp
 {
     class Program
     {
-        private static string __DESTINATION_PATH = "D:\\Projects\\C_SHARP\\minidos\\src\\RPCServer\\Resources";
+        private static string __DESTINATION_PATH = "../../../Resources";
 
         static void Main(string[] args)
         {
