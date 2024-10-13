@@ -129,6 +129,8 @@ namespace MiniDOS.FileSystem
                 var dirList = VFSManager.GetDirectoryListing(_path);
                 ConsoleColor color = Console.ForegroundColor;
                 int dirCount = 0;
+                int fileCount = 0;
+                long fileSize = 0;
 
                 foreach (var file in dirList)
                 {
@@ -149,12 +151,19 @@ namespace MiniDOS.FileSystem
                         Console.ForegroundColor = color;
                         dirCount++;
                     }
+                    else
+                    {
+                        fileSize += file.mSize;
+                        fileCount++;
+                    }
                 }
 
-                var fmt = string.Format("{0:#,0.000}", _vfs.GetTotalFreeSpace(CurrentDrive));
+                var fmt = string.Format("{0:#,0}", fileSize);
 
+                Console.WriteLine($"        {fileCount} File(s) {fmt} bytes");
+                fmt = string.Format("{0:#,0}", _vfs.GetTotalFreeSpace(CurrentDrive));
                 Console.WriteLine($"        {dirCount} Dir(s) {fmt} bytes free");
-
+                
                 return true;
             }
             catch (Exception ex)

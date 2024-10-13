@@ -13,7 +13,7 @@ namespace RPCLibrary.Command
             __client = new RPCClient();
         }
 
-        public bool Execute(string filepath, string host, int port)
+        public bool Execute(string filepath, string host, int port, string? cmdLineArgs)
         {
             bool ret = __client.Connect(host, port);
             FileStream? fs;
@@ -45,7 +45,7 @@ namespace RPCLibrary.Command
             RPCData data = new RPCData()
             {
                 Type = RPCData.TYPE_LUA_FILENAME,
-                EndOfData = (bytesRead <= 0),
+                EndOfData = false,
                 Data = aFileName 
             };
 
@@ -54,13 +54,29 @@ namespace RPCLibrary.Command
 
             if (!ret)
             {
-                Console.WriteLine("Error to send data");
+                Console.WriteLine("Error to send file name data");
                 __client.Close();
 
                 return false;
             }
 
-            Console.WriteLine($"SENT");
+            // Send command line arguments (if any)
+            if (cmdLineArgs != null)
+            {
+                data.Type = RPCData.TYPE_LUA_PARMS;
+                data.EndOfData = false;
+                data.Data = Encoding.ASCII.GetBytes(cmdLineArgs);
+
+                ret = __client.Send(data);
+
+                if (!ret)
+                {
+                    Console.WriteLine("Error to send lua parameters data");
+                    __client.Close();
+
+                    return false;
+                }
+            }
 
             bytesRead = RPCData.DEFAULT_BLOCK_SIZE;
             data.Type = RPCData.TYPE_LUA_EXECUTABLE;

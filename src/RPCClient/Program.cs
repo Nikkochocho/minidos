@@ -12,6 +12,7 @@ namespace RPCClientApp
         private static string __hostname = "127.0.0.1";
         private static string __port = "1999";
         private static string __filename = "../../../Resources/lua_sample.lua";
+        private static string __parms = "TEST PARMS";
 
         static void Main(string[] args)
         {
@@ -60,14 +61,17 @@ namespace RPCClientApp
             string port = Console.ReadLine();
             WriteLabel("LUA FILE NAME", __filename);
             string filename = Console.ReadLine();
+            WriteLabel("LUA PARAMETERS", __parms);
+            string parms = Console.ReadLine();
 
             __hostname = (hostname.Length == 0 ? __hostname : hostname);
             __port = (port.Length == 0 ? __port : port);
             __filename = (filename.Length == 0 ? __filename : filename);
+            __parms = (parms.Length == 0 ? __parms: parms);
 
             RPCExecution exec = new RPCExecution();
 
-            if (exec.Execute(__filename, __hostname, int.Parse(__port)))
+            if (exec.Execute(__filename, __hostname, int.Parse(__port), __parms))
             {
                 Console.WriteLine("Execution sucessfull");
             }

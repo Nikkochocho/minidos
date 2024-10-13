@@ -5,6 +5,9 @@ using Cosmos.System.Network.IPv4.UDP.DHCP;
 using CosmosFtpServer;
 using RPCLibrary.Command;
 using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Linq;
 
 
 namespace MiniDOS.Shell
@@ -17,10 +20,63 @@ namespace MiniDOS.Shell
 
         private readonly FileSystem.FileSystemManager _fs;
         private bool _shutdown = false;
-        private RPCExecution _exec = new RPCExecution();
 
         public string CurrentDir { get { return _fs.CurrentDir; } }
         public bool Shutdown { get { return _shutdown; } }
+
+        private IEnumerable<string> ParseCmdLineArgs(string line, char delimiter, char textQualifier)
+        {
+            if (line == null)
+                yield break;
+            else
+            {
+                char prevChar = '\0';
+                char nextChar = '\0';
+                char currentChar = '\0';
+                bool inString = false;
+                StringBuilder token = new StringBuilder();
+
+                line = line.TrimEnd();
+
+                for (int i = 0; i < line.Length; i++)
+                {
+                    currentChar = line[i];
+
+                    if (i > 0)
+                        prevChar = line[i - 1];
+                    else
+                        prevChar = '\0';
+
+                    if (i + 1 < line.Length)
+                        nextChar = line[i + 1];
+                    else
+                        nextChar = '\0';
+
+                    if (currentChar == textQualifier && (prevChar == '\0' || prevChar == delimiter) && !inString)
+                    {
+                        inString = true;
+                        continue;
+                    }
+
+                    if (currentChar == textQualifier && (nextChar == '\0' || nextChar == delimiter) && inString)
+                    {
+                        inString = false;
+                        continue;
+                    }
+
+                    if (currentChar == delimiter && !inString)
+                    {
+                        yield return token.ToString();
+                        token = token.Remove(0, token.Length);
+                        continue;
+                    }
+
+                    token = token.Append(currentChar);
+                }
+
+                yield return token.ToString();
+            }
+        }
 
         private bool GetOneParm(string[] parms, out string ret)
         {
@@ -48,15 +104,20 @@ namespace MiniDOS.Shell
             }
             return false;
         }
-        private bool GetThreeParms(string[] parms, out string ret1, out string ret2, out string ret3)
+        private bool GetThreeParmsAndOptional(string[] parms, out string ret1, out string ret2, out string ret3, out string optional)
         {
-            ret1 = ret2 = ret3 = default;
+            ret1 = ret2 = ret3 = optional = default;
 
-            if (parms.Length == 4 && parms[1] != "" && parms[2] != "" && parms[3] != "")
+            if (parms.Length >= 4 && parms[1] != "" && parms[2] != "" && parms[3] != "")
             {
                 ret1 = parms[1];
                 ret2 = parms[2];
                 ret3 = parms[3];
+
+                if (parms.Length == 5)
+                {
+                    optional = parms[4];
+                }
 
                 return true;
             }
@@ -80,7 +141,7 @@ namespace MiniDOS.Shell
 
         public bool Exec(string cmd)
         {
-            var parms = cmd.Split(' ');
+            var parms = ParseCmdLineArgs(cmd, ' ', '\"').ToArray();
 
             if (parms.Length > 0)
             {
@@ -243,11 +304,12 @@ namespace MiniDOS.Shell
 
                     case "exec":
                         {
-                            if (GetThreeParms(parms, out string hostname, out string port, out string filename))
+                            if (GetThreeParmsAndOptional(parms, out string hostname, out string port, out string filename, out string cmdLineParms))
                             {
                                 string absFileNamePath = _fs.GetAbsolutePath(filename);
+                                RPCExecution exec = new RPCExecution();
 
-                                if (_exec.Execute(absFileNamePath, hostname, int.Parse(port)))
+                                if (exec.Execute(absFileNamePath, hostname, int.Parse(port), cmdLineParms))
                                 {
                                     Console.WriteLine("Execution sucessfull");
                                 }

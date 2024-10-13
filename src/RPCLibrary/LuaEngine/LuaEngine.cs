@@ -13,6 +13,8 @@ namespace RPCLibrary
         private readonly TcpClient _tcpClient;
         private bool isScriptRunning = false;
 
+        public string Args { get; set; } = "";
+
 
         public LuaEngine(TcpClient tcpClient)
         {
@@ -32,6 +34,11 @@ namespace RPCLibrary
                                     typeof(LuaEngine).GetMethod(nameof(LuaEngine._clear),
                                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
             _state.DoString(@"clear = function() _clear(); end");
+            _state.RegisterFunction(nameof(_getArgs),
+                        this,
+                        typeof(LuaEngine).GetMethod(nameof(LuaEngine._getArgs),
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
+            _state.DoString(@"get_args = function() return _getArgs(); end");
         }
 
         public bool RunScript(string fileName)
@@ -86,6 +93,11 @@ namespace RPCLibrary
         {
             Console.Clear();
             SendScreenResponse(RPCData.ANSI_CLEAR_SCREEN_CODE);
+        }
+
+        private string _getArgs()
+        {
+            return Args;
         }
     }
 }

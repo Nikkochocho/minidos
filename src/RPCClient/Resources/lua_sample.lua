@@ -1,5 +1,9 @@
 print('Lua Sample')
 
+args = get_args()
+
+print('Command line arguments '.. args)
+
 x = 3
 y = 4
 z = x + y
