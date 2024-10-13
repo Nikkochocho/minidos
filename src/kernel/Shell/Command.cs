@@ -1,5 +1,8 @@
-﻿using Cosmos.System.Network.Config;
+﻿using Cosmos.System.FileSystem.VFS;
+using Cosmos.System.FileSystem;
+using Cosmos.System.Network.Config;
 using Cosmos.System.Network.IPv4.UDP.DHCP;
+using CosmosFtpServer;
 using RPCLibrary.Command;
 using System;
 
@@ -258,18 +261,27 @@ namespace MiniDOS.Shell
                             return false;
                         }
 
-                    //case "ftp_server":
-                    //case "ftpserver":
-                    //    {
-                    //        var fs = new CosmosVFS();
-                    //        VFSManager.RegisterVFS(fs);
+                    case "ftpserver":
+                        {
+                            if (GetOneParm(parms, out string path))
+                            {
+                                var absPath = _fs.GetAbsolutePath(path);
 
-                    //        using (var xServer = new FtpServer(fs, "0:\\"))
-                    //        {
-                    //            /** Listen for new FTP client connections **/
-                    //            FtpServer.Listen();
-                    //        }
-                    //    }
+                                if (!absPath.EndsWith("\\"))
+                                {
+                                    absPath += "\\";
+                                }
+
+                                using (var ftpServer = new FtpServer(_fs.CurrentFileSystem, absPath, true))
+                                {
+                                    Console.WriteLine($"FTP files directory [{absPath}]");
+
+                                    ftpServer.Listen();
+                                }
+                                return true;
+                            }
+                            return false;
+                        }
 
                     case "shutdown":
                         _shutdown = true;

@@ -14,6 +14,7 @@ namespace MiniDOS.FileSystem
 
         public string CurrentDir { get { return _currentDir; } }
         public string CurrentDrive { get { return __CURRENT_DRIVE; } }
+        public CosmosVFS CurrentFileSystem { get { return _vfs; } }
 
 
         private string PreparePath(string path)
