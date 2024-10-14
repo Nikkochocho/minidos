@@ -22,7 +22,7 @@ namespace MiniDOS.GPTClient
         {
             var config = new ConfigurationBuilder() // Initialize configuration builder
                 .SetBasePath(Directory.GetCurrentDirectory()) //  Set the base path to the current directory
-                .AddJsonFile("appsettings.json") // Add JSON configuration file
+                .AddJsonFile("D:\\Projects\\C_SHARP\\minidos\\src\\GPTClient\\Resources\\appsettings.json") // Add JSON configuration file
                 .Build(); // Build the configuration
 
             var apiKeyFromConfig = config["OpenAI:ApiKey"]; //Verify if API key is not null
