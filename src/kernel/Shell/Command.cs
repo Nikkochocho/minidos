@@ -1,9 +1,13 @@
-﻿using Cosmos.System.Network.Config;
+﻿using Cosmos.System.FileSystem.VFS;
+using Cosmos.System.FileSystem;
+using Cosmos.System.Network.Config;
 using Cosmos.System.Network.IPv4.UDP.DHCP;
-using MiniDOS.FileSystem;
+using CosmosFtpServer;
+using RPCLibrary.Command;
 using System;
-using System.Net.Sockets;
+using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 
 namespace MiniDOS.Shell
@@ -14,12 +18,65 @@ namespace MiniDOS.Shell
         private static string __VERSION = "0.1";
         private static string __AUTHOR = "Lara H. Ferreira";
 
-        private readonly FileSystemManager _fs;
+        private readonly FileSystem.FileSystemManager _fs;
         private bool _shutdown = false;
-        private TcpClient _client = new TcpClient();
 
         public string CurrentDir { get { return _fs.CurrentDir; } }
         public bool Shutdown { get { return _shutdown; } }
+
+        private IEnumerable<string> ParseCmdLineArgs(string line, char delimiter, char textQualifier)
+        {
+            if (line == null)
+                yield break;
+            else
+            {
+                char prevChar = '\0';
+                char nextChar = '\0';
+                char currentChar = '\0';
+                bool inString = false;
+                StringBuilder token = new StringBuilder();
+
+                line = line.TrimEnd();
+
+                for (int i = 0; i < line.Length; i++)
+                {
+                    currentChar = line[i];
+
+                    if (i > 0)
+                        prevChar = line[i - 1];
+                    else
+                        prevChar = '\0';
+
+                    if (i + 1 < line.Length)
+                        nextChar = line[i + 1];
+                    else
+                        nextChar = '\0';
+
+                    if (currentChar == textQualifier && (prevChar == '\0' || prevChar == delimiter) && !inString)
+                    {
+                        inString = true;
+                        continue;
+                    }
+
+                    if (currentChar == textQualifier && (nextChar == '\0' || nextChar == delimiter) && inString)
+                    {
+                        inString = false;
+                        continue;
+                    }
+
+                    if (currentChar == delimiter && !inString)
+                    {
+                        yield return token.ToString();
+                        token = token.Remove(0, token.Length);
+                        continue;
+                    }
+
+                    token = token.Append(currentChar);
+                }
+
+                yield return token.ToString();
+            }
+        }
 
         private bool GetOneParm(string[] parms, out string ret)
         {
@@ -47,6 +104,25 @@ namespace MiniDOS.Shell
             }
             return false;
         }
+        private bool GetThreeParmsAndOptional(string[] parms, out string ret1, out string ret2, out string ret3, out string optional)
+        {
+            ret1 = ret2 = ret3 = optional = default;
+
+            if (parms.Length >= 4 && parms[1] != "" && parms[2] != "" && parms[3] != "")
+            {
+                ret1 = parms[1];
+                ret2 = parms[2];
+                ret3 = parms[3];
+
+                if (parms.Length == 5)
+                {
+                    optional = parms[4];
+                }
+
+                return true;
+            }
+            return false;
+        }
 
         public Command( FileSystem.FileSystemManager fs )
         {
@@ -65,16 +141,19 @@ namespace MiniDOS.Shell
 
         public bool Exec(string cmd)
         {
-            var parms = cmd.Split(' ');
+            var parms = ParseCmdLineArgs(cmd, ' ', '\"').ToArray();
 
             if (parms.Length > 0)
             {
-                switch (parms[0].Trim().ToLower())
+                string command = parms[0].Trim().ToLower();
+
+                switch (command)
                 {
+                    case "pwd":
                     case "chdir":
                     case "cd":
                         {
-                            if (GetOneParm(parms, out string path))
+                            if (!command.Equals("pwd") && GetOneParm(parms, out string path))
                             {
                                 if (!_fs.ChDir(path, out string error))
                                 {
@@ -223,49 +302,48 @@ namespace MiniDOS.Shell
                             return true;
                         }
 
-                    case "connect":
-                        string serverIp = "192.168.1.205";
-                        int serverPort = 1999;
-
-                        /**Connect to server **/
-                        _client.Connect(serverIp, serverPort);
-                        Console.WriteLine($"Connected to {serverIp}");
-                        NetworkStream stream = _client.GetStream();
-
-                        /** Send data **/
-                        string messageToSend = "Hello from CosmosOS!";
-                        byte[] dataToSend = Encoding.ASCII.GetBytes(messageToSend);
-
-                        Console.WriteLine("SIZE => " + dataToSend.Length);
-                        Console.WriteLine("BUFFERSIZE => " + _client.ReceiveBufferSize);
-
-                        stream.Write(dataToSend, 0, dataToSend.Length);
-
-                        /** Receive data **/
-                        byte[] receivedData = new byte[_client.ReceiveBufferSize];
-                        int count = 0;
-
-                        while (count < 10)
+                    case "exec":
                         {
-                            int bytesRead = stream.Read(receivedData, 0, dataToSend.Length);
-
-                            if (bytesRead > 0)
+                            if (GetThreeParmsAndOptional(parms, out string hostname, out string port, out string filename, out string cmdLineParms))
                             {
-                                string receivedMessage = Encoding.ASCII.GetString(receivedData, 0, bytesRead);
-                                Console.WriteLine("MSG ==>" + receivedMessage);
-                                stream.Write(dataToSend, 0, dataToSend.Length);
+                                string absFileNamePath = _fs.GetAbsolutePath(filename);
+                                RPCExecution exec = new RPCExecution();
+
+                                if (exec.Execute(absFileNamePath, hostname, int.Parse(port), cmdLineParms))
+                                {
+                                    Console.WriteLine("Execution sucessfull");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Execution failed");
+                                }
+
+                                return true;
                             }
-                            Console.WriteLine("COUNT ==>" + count++);
+                            return false;
                         }
 
-                        /** Close data stream **/
-                        //stream.Close();
-                        //client.Close();
-                        //client.Dispose();
-                        Console.WriteLine("Closed");
+                    case "ftpserver":
+                        {
+                            if (GetOneParm(parms, out string path))
+                            {
+                                var absPath = _fs.GetAbsolutePath(path);
 
-                        return true;
+                                if (!absPath.EndsWith("\\"))
+                                {
+                                    absPath += "\\";
+                                }
 
+                                using (var ftpServer = new FtpServer(_fs.CurrentFileSystem, absPath, true))
+                                {
+                                    Console.WriteLine($"FTP files directory [{absPath}]");
+
+                                    ftpServer.Listen();
+                                }
+                                return true;
+                            }
+                            return false;
+                        }
 
                     case "shutdown":
                         _shutdown = true;

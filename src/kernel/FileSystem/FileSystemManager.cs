@@ -8,17 +8,14 @@ namespace MiniDOS.FileSystem
 {
     public class FileSystemManager
     {
-        private static string __CURRENT_DRIVE = "0:";
+        private const string __CURRENT_DRIVE = "0:";
         private CosmosVFS _vfs;
         private string _currentDir = @"\";
 
         public string CurrentDir { get { return _currentDir; } }
+        public string CurrentDrive { get { return __CURRENT_DRIVE; } }
+        public CosmosVFS CurrentFileSystem { get { return _vfs; } }
 
-
-        private string FullPath(string path)
-        {
-            return @$"{__CURRENT_DRIVE}.\{PreparePath(path)}";
-        }
 
         private string PreparePath(string path)
         {
@@ -29,7 +26,12 @@ namespace MiniDOS.FileSystem
 
                 for(int i = 0; i < (pathList.Length - 1); i++)
                 {
-                    _path = Path.Combine(_path, pathList[i]);
+                    var pathItem = pathList[i];
+
+                    if (!pathItem.Equals(""))
+                    {
+                        _path = Path.Combine(_path, pathItem);
+                    }
                 }
 
                 return _path;
@@ -44,9 +46,14 @@ namespace MiniDOS.FileSystem
             VFSManager.RegisterVFS(_vfs);
         }
 
+        public string GetAbsolutePath(string path)
+        {
+            return @$"{CurrentDrive}.\{PreparePath(path)}";
+        }
+
         public bool MkDir(string path, out string error)
         {
-            string _path = FullPath(path);
+            string _path = GetAbsolutePath(path);
             bool ret = VFSManager.DirectoryExists(_path);
 
             error = default;
@@ -72,7 +79,7 @@ namespace MiniDOS.FileSystem
 
         public bool RmDir(string path, out string error)
         {
-            string _path = FullPath(path);
+            string _path = GetAbsolutePath(path);
             bool ret = VFSManager.DirectoryExists(_path);
 
             error = default;
@@ -99,7 +106,7 @@ namespace MiniDOS.FileSystem
         public bool ChDir(string path, out string error)
         {
             string _path = PreparePath(path);
-            bool ret = VFSManager.DirectoryExists(FullPath(_path));
+            bool ret = VFSManager.DirectoryExists(GetAbsolutePath(_path));
 
             error = default;
 
@@ -118,9 +125,12 @@ namespace MiniDOS.FileSystem
         {
             try
             {
-                string _path = FullPath(path);
+                string _path = GetAbsolutePath(path);
                 var dirList = VFSManager.GetDirectoryListing(_path);
                 ConsoleColor color = Console.ForegroundColor;
+                int dirCount = 0;
+                int fileCount = 0;
+                long fileSize = 0;
 
                 foreach (var file in dirList)
                 {
@@ -139,9 +149,21 @@ namespace MiniDOS.FileSystem
                     if (isDir)
                     {
                         Console.ForegroundColor = color;
+                        dirCount++;
+                    }
+                    else
+                    {
+                        fileSize += file.mSize;
+                        fileCount++;
                     }
                 }
 
+                var fmt = string.Format("{0:#,0}", fileSize);
+
+                Console.WriteLine($"        {fileCount} File(s) {fmt} bytes");
+                fmt = string.Format("{0:#,0}", _vfs.GetTotalFreeSpace(CurrentDrive));
+                Console.WriteLine($"        {dirCount} Dir(s) {fmt} bytes free");
+                
                 return true;
             }
             catch (Exception ex)
@@ -153,8 +175,8 @@ namespace MiniDOS.FileSystem
 
         public bool CopyFile(string source, string destination, out string error)
         {
-            string _source = FullPath(source);
-            string _destination = FullPath(destination);
+            string _source = GetAbsolutePath(source);
+            string _destination = GetAbsolutePath(destination);
             bool ret = VFSManager.FileExists(_source);
 
             error = default;
@@ -180,8 +202,8 @@ namespace MiniDOS.FileSystem
 
         public bool RenameFile(string oldFileName, string newFileName, out string error)
         {
-            string _oldFileName = FullPath(oldFileName);
-            string _newFileName = FullPath(newFileName);
+            string _oldFileName = GetAbsolutePath(oldFileName);
+            string _newFileName = GetAbsolutePath(newFileName);
             bool ret = VFSManager.FileExists(_oldFileName);
 
             error = default;
@@ -208,7 +230,7 @@ namespace MiniDOS.FileSystem
 
         public bool DeleteFile(string file, out string error)
         {
-            string _file = FullPath(file);
+            string _file = GetAbsolutePath(file);
             bool ret = VFSManager.FileExists(_file);
 
             error = default;
@@ -234,7 +256,7 @@ namespace MiniDOS.FileSystem
 
         public bool ReadFile(string file, out string error)
         {
-            string _file = FullPath(file);
+            string _file = GetAbsolutePath(file);
             bool ret = VFSManager.FileExists(_file);
 
             error = default;

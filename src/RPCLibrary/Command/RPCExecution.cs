@@ -1,8 +1,6 @@
 ﻿using RPCLibrary.Client;
 using RPCLibrary.DataProtocol;
-using System.Linq.Expressions;
 using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace RPCLibrary.Command
 {
@@ -15,16 +13,9 @@ namespace RPCLibrary.Command
             __client = new RPCClient();
         }
 
-        public bool Execute(string filepath, string host, int port)
+        public bool Execute(string filepath, string host, int port, string? cmdLineArgs)
         {
-            bool ret = __client.Connect(host, port);
             FileStream? fs;
-
-            if (!ret)
-            {
-                Console.WriteLine("Error handling execution");
-                return false;
-            }
 
             // Open file.
 
@@ -34,7 +25,15 @@ namespace RPCLibrary.Command
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine($"File open exception => [{ex.Message}]");
+                return false;
+            }
+
+            bool ret = __client.Connect(host, port);
+
+            if (!ret)
+            {
+                Console.WriteLine("Error handling execution");
                 return false;
             }
 
@@ -45,18 +44,37 @@ namespace RPCLibrary.Command
             RPCData data = new RPCData()
             {
                 Type = RPCData.TYPE_LUA_FILENAME,
-                EndOfData = (bytesRead <= 0),
+                EndOfData = false,
                 Data = aFileName 
             };
-
 
             // Send file name
             ret = __client.Send(data);
 
             if (!ret)
             {
-                Console.WriteLine("Error to send data");
+                Console.WriteLine("Error to send file name data");
+                __client.Close();
+
                 return false;
+            }
+
+            // Send command line arguments (if any)
+            if (cmdLineArgs != null)
+            {
+                data.Type = RPCData.TYPE_LUA_PARMS;
+                data.EndOfData = false;
+                data.Data = Encoding.ASCII.GetBytes(cmdLineArgs);
+
+                ret = __client.Send(data);
+
+                if (!ret)
+                {
+                    Console.WriteLine("Error to send lua parameters data");
+                    __client.Close();
+
+                    return false;
+                }
             }
 
             bytesRead = RPCData.DEFAULT_BLOCK_SIZE;
@@ -94,6 +112,7 @@ namespace RPCLibrary.Command
             }
 
             fs.Close();
+            __client.Close();
 
             return ret;
         }

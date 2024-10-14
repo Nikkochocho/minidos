@@ -8,13 +8,14 @@ namespace RPCLibrary.Server
 {
     public class RPCServer
     {
-        private string __DEST_PATH = "D:\\Projects\\C_SHARP\\minidos\\src\\RPCServer\\Resources";
+        private readonly string __destinationPath;
         private TcpListener __server;
         private bool __listening;
 
 
-        public RPCServer(IPAddress address, int port)
+        public RPCServer(IPAddress address, int port, string destinationPath)
         {
+            __destinationPath = destinationPath;
             __server = new TcpListener(address, port);
         }
 
@@ -63,7 +64,7 @@ namespace RPCLibrary.Server
             {
                 while (true)
                 {
-                    TcpClient client;
+                    TcpClient? client;
 
                     try
                     {
@@ -79,70 +80,76 @@ namespace RPCLibrary.Server
 
                     _ = Task.Factory.StartNew(() =>
                     {
-                        string tempFileName = Path.GetRandomFileName();
-                        string filename = $"{__DEST_PATH}\\{tempFileName}";
-                        string luaFileName = null;
-                        FileStream? fs;
+                        string? fileName = null;
+                        string? cmdLineArgs = null;
+                        FileStream? fs = default;
+                        bool exit = false;
 
-                        try
-                        {
-                            fs = File.Open(filename, FileMode.Create, FileAccess.Write, FileShare.Write);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine(ex.Message);
-                            return;
-                        }
 
-                        while (Read(client, out RPCData data))
+                        while (!exit && Read(client, out RPCData data))
                         {
-                            // Send response based on client packaet request type
+                            // Send response based on client packet request type
                             if (data.Data != null)
                             {
                                 switch (data.Type)
                                 {
                                     case RPCData.TYPE_LUA_FILENAME:
-                                        luaFileName = System.Text.Encoding.Default.GetString(data.Data);
+                                        var luaFileName = System.Text.Encoding.Default.GetString(data.Data);
+
+                                        Console.WriteLine($"RECEIVED LUA EXECUTABLE FILE NAME [{luaFileName}]");
+
+                                        try
+                                        {
+                                            var name = $"{__destinationPath}/{Path.GetRandomFileName()}.lua";
+                                           
+                                            fs = File.Open(name, FileMode.Create, FileAccess.Write, FileShare.Write);
+                                            fileName = name;
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Console.WriteLine(ex.Message);
+                                            fs?.Close();
+                                            fs = null;
+                                            exit = true;
+                                        }
                                         continue;
+
+                                    case RPCData.TYPE_LUA_PARMS:
+                                        cmdLineArgs = System.Text.Encoding.Default.GetString(data.Data);
+                                        Console.WriteLine($"RECEIVED LUA COMMAND LINE ARGUMENTS [{cmdLineArgs}]");
+                                        continue;
+
                                     case RPCData.TYPE_LUA_EXECUTABLE:
+                                        Console.WriteLine("RECEIVING LUA EXECUTABLE FILE CONTENT");
                                         fs?.Write(data.Data);
                                         fs?.Flush();
-                                        break;
-                                }
-                            }
 
-                            // Send Lua executable Screen content to client
-                            if (data.EndOfData)
-                            {
-                                if (luaFileName != null)
-                                {
-                                    fs?.Close();
-                                    fs = null;
-
-                                    try
-                                    {
-                                        string destination = $"{__DEST_PATH}\\{luaFileName}";
-                                        LuaEngine lua = new LuaEngine(client);
-
-                                        System.IO.File.Move(filename, destination, true);
-
-                                        if (!lua.RunScript(destination))
+                                        // Execute Lua script sending screen content
+                                        if (data.EndOfData)
                                         {
-                                            Console.WriteLine($"Error to executing file {destination}");
+                                            fs?.Close();
+                                            fs = null;
+
+                                            if ((fileName == null) || !ExecLuaScript(client, fileName, cmdLineArgs))
+                                            {
+                                                Console.WriteLine($"Error to executing file {fileName}");
+                                            }
+
+                                            if (fileName != null)
+                                            {
+                                                System.IO.File.Delete(fileName);
+                                            }
+
+                                            exit = true;
+                                            fileName = null;
+                                            cmdLineArgs = null;
                                         }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Console.WriteLine(ex.Message);
-                                    }
-                                }
-                                else
-                                {
-                                    Console.WriteLine("Error lua file name not provided");
+                                        break;
                                 }
                             }
                         }
 
+                        client?.Close();
                         fs?.Close();
 
                         Console.WriteLine("Client connection handling finished");
@@ -160,6 +167,24 @@ namespace RPCLibrary.Server
             RPCClient rpcClient = new RPCClient(tcpClient);
 
             return rpcClient.Recv(tcpClient, out data);
+        }
+
+        private bool ExecLuaScript(TcpClient client, string filename, string? args)
+        {
+            try
+            {
+                LuaEngine lua = new LuaEngine(client);
+
+                lua.Args = (args ?? string.Empty);
+
+                return lua.RunScript(filename);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+
         }
     }
 }

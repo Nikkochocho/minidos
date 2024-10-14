@@ -10,13 +10,15 @@
 
     <PropertyGroup>
         <EnableGDB>False</EnableGDB>
-        <StartCosmosGDB>False</StartCosmosGDB>
-        <VisualStudioDebugPort>Pipe: Cosmos\Serial</VisualStudioDebugPort>
-        <CosmosDebugPort>Serial: COM1</CosmosDebugPort>
+        <StartCosmosGDB>True</StartCosmosGDB>
+        <VisualStudioDebugPort>Pipe: pipe\namedpipe</VisualStudioDebugPort>
+        <CosmosDebugPort>Pipe: pipe\namedpipe</CosmosDebugPort>
         <Launch>VMware</Launch>
         <Profile>VMware</Profile>
         <Description>Use VMware Player or Workstation to deploy and debug.</Description>
         <PxeInterface>192.168.0.8</PxeInterface>
+        <DebugCom>1</DebugCom>
+        <DebugEnabled>False</DebugEnabled>
     </PropertyGroup>
 
     <ItemGroup>
@@ -24,6 +26,11 @@
         <PackageReference Include="Cosmos.Debug.Kernel" Version="0-*" NoWarn="NU1604" />
         <PackageReference Include="Cosmos.System2" Version="0-*" NoWarn="NU1604" />
         <PackageReference Include="Cosmos.Plugs" Version="0-*" NoWarn="NU1604" />
+        <PackageReference Include="CosmosFtpServer" Version="1.0.9" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\RPCLibrary\RPCLibrary.csproj" />
     </ItemGroup>
 
 </Project>
