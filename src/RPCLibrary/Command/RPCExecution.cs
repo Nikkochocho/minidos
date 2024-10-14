@@ -15,14 +15,7 @@ namespace RPCLibrary.Command
 
         public bool Execute(string filepath, string host, int port, string? cmdLineArgs)
         {
-            bool ret = __client.Connect(host, port);
             FileStream? fs;
-
-            if (!ret)
-            {
-                Console.WriteLine("Error handling execution");
-                return false;
-            }
 
             // Open file.
 
@@ -32,9 +25,15 @@ namespace RPCLibrary.Command
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"File open exception {ex.Message}");
-                __client.Close();
+                Console.WriteLine($"File open exception => [{ex.Message}]");
+                return false;
+            }
 
+            bool ret = __client.Connect(host, port);
+
+            if (!ret)
+            {
+                Console.WriteLine("Error handling execution");
                 return false;
             }
 
