@@ -5,9 +5,16 @@ using Newtonsoft.Json; //requied
 
 
 namespace MiniDOS.GPTClient
-{ 
-    internal class GptClient
+{
+    public class GptClient
     {
+
+        private static async Task Main()
+        {
+            var client = new GptClient();
+            await client.RunAsync();
+        }
+
         private readonly HttpClient _httpClient;  // HTTP client for sending requests
         private readonly string _apiKey; //// OpenAI API key
 
@@ -18,7 +25,12 @@ namespace MiniDOS.GPTClient
                 .AddJsonFile("appsettings.json") // Add JSON configuration file
                 .Build(); // Build the configuration
 
-            _apiKey = config["OpenAI:ApiKey"]; // Retrieve the API key from the json configuration file
+            var apiKeyFromConfig = config["OpenAI:ApiKey"]; //Verify if API key is not null
+            if (string.IsNullOrEmpty(apiKeyFromConfig))
+            {
+                throw new InvalidOperationException("A chave de API não foi encontrada na configuração."); //Throw a message if API key is null
+            }
+            _apiKey = apiKeyFromConfig;  // Retrieve the API key from the json configuration
 
             _httpClient = new HttpClient();
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey); // Set the Authorization header with the API key
@@ -27,8 +39,8 @@ namespace MiniDOS.GPTClient
         public async Task RunAsync()
         {
             while (true) // Infinite loop to continuously accept user input
-            { 
-        
+            {
+
                 var question = Console.ReadLine();  // Read user question
 
                 if (string.IsNullOrWhiteSpace(question)) // Check if the input is empty or whitespace
