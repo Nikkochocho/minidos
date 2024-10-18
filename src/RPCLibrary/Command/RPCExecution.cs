@@ -38,7 +38,7 @@ namespace RPCLibrary.Command
             }
 
             string fileName = Path.GetFileName(filepath);
-            byte[] aFileName = Encoding.ASCII.GetBytes(fileName);
+            byte[] aFileName = Encoding.Default.GetBytes(fileName);
             byte[] buffer = new byte[RPCData.DEFAULT_BLOCK_SIZE];
             int bytesRead = aFileName.Length;           
             RPCData data = new RPCData()
@@ -64,7 +64,7 @@ namespace RPCLibrary.Command
             {
                 data.Type = RPCData.TYPE_LUA_PARMS;
                 data.EndOfData = false;
-                data.Data = Encoding.ASCII.GetBytes(cmdLineArgs);
+                data.Data = Encoding.Default.GetBytes(cmdLineArgs);
 
                 ret = __client.Send(data);
 
