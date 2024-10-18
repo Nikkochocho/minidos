@@ -9,14 +9,16 @@ namespace RPCLibrary.Server
     public class RPCServer
     {
         private readonly string __destinationPath;
-        private TcpListener __server;
+        private readonly string __openAiApiKey;
+        private readonly TcpListener __server;
         private bool __listening;
 
 
-        public RPCServer(IPAddress address, int port, string destinationPath)
+        public RPCServer(IPAddress address, int port, string destinationPath, string openAIApiKey)
         {
             __destinationPath = destinationPath;
             __server = new TcpListener(address, port);
+            __openAiApiKey = openAIApiKey;
         }
 
         public bool Start()
@@ -173,7 +175,7 @@ namespace RPCLibrary.Server
         {
             try
             {
-                LuaEngine lua = new LuaEngine(client);
+                LuaEngine lua = new LuaEngine(client, __openAiApiKey);
 
                 lua.Args = (args ?? string.Empty);
 

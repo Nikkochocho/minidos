@@ -11,8 +11,4 @@
     <ProjectReference Include="..\RPCLibrary\RPCLibrary.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Resources\" />
-  </ItemGroup>
-
 </Project>

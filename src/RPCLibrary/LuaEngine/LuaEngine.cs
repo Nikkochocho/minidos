@@ -4,21 +4,26 @@ using RPCLibrary.Client;
 using RPCLibrary.DataProtocol;
 using System.Net.Sockets;
 using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace RPCLibrary
 {
     public class LuaEngine
     {
-        private NLua.Lua _state = new NLua.Lua();
+        private NLua.Lua           _state = new NLua.Lua();
         private readonly TcpClient _tcpClient;
-        private bool isScriptRunning = false;
+        private readonly string    _apiKey;
+        private bool               isScriptRunning = false;
 
         public string Args { get; set; } = "";
 
 
-        public LuaEngine(TcpClient tcpClient)
+        public LuaEngine(TcpClient tcpClient, string apiKey)
         {
+            _apiKey    = apiKey;
             _tcpClient = tcpClient;
+
+            _state.State.Encoding = Encoding.UTF8;
             _state.RegisterFunction(nameof(_print), 
                                     this, 
                                     typeof(LuaEngine).GetMethod(nameof(LuaEngine._print),
@@ -35,10 +40,20 @@ namespace RPCLibrary
                                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
             _state.DoString(@"clear = function() _clear(); end");
             _state.RegisterFunction(nameof(_getArgs),
-                        this,
-                        typeof(LuaEngine).GetMethod(nameof(LuaEngine._getArgs),
-                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
+                                    this,
+                                    typeof(LuaEngine).GetMethod(nameof(LuaEngine._getArgs),
+                                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
             _state.DoString(@"get_args = function() return _getArgs(); end");
+            _state.RegisterFunction(nameof(_askGPT),
+                                    this,
+                                    typeof(LuaEngine).GetMethod(nameof(LuaEngine._askGPT),
+                                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
+            _state.DoString(@"ask_gpt = function(question) return _askGPT(question); end");
+            _state.RegisterFunction(nameof(_askGPTPrint),
+                                    this,
+                                    typeof(LuaEngine).GetMethod(nameof(LuaEngine._askGPTPrint),
+                                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
+            _state.DoString(@"ask_gpt_print = function(question) _askGPTPrint(question); end");
         }
 
         public bool RunScript(string fileName)
@@ -54,7 +69,7 @@ namespace RPCLibrary
         private void SendScreenResponse(string text)
         {
             RPCClient rpcClient = new RPCClient(_tcpClient);
-            byte[] buffer = Encoding.ASCII.GetBytes(text);
+            byte[] buffer = Encoding.Default.GetBytes(text);
             RPCData data = new RPCData()
             {
                 Type = RPCData.TYPE_LUA_SCREEN_RESPONSE,
@@ -98,6 +113,23 @@ namespace RPCLibrary
         private string _getArgs()
         {
             return Args;
+        }
+
+        private string _askGPT(string question)
+        {
+            OpenAIClient openAI = new OpenAIClient(_apiKey);
+
+            return openAI.Ask(question);
+        }
+
+        private void _askGPTPrint(string question)
+        {
+            OpenAIClient openAI   = new OpenAIClient(_apiKey);
+            string       response = openAI.Ask(question);
+
+            Console.WriteLine(response);
+
+            SendScreenResponse(response);
         }
     }
 }
