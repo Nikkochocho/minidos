@@ -8,6 +8,12 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace RPCLibrary
 {
+    public class LuaEngineConstants
+    {
+        public const string ZIP_EXTENSION = ".zip";
+        public const string LUA_EXTENSION = ".lua";
+    }
+
     public record OpenAIParms
     {
         public string ApiKey { get; set; }

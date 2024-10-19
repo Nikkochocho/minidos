@@ -37,14 +37,16 @@ namespace RPCLibrary.Command
                 return false;
             }
 
-            string fileName = Path.GetFileName(filepath);
-            byte[] aFileName = Encoding.Default.GetBytes(fileName);
-            byte[] buffer = new byte[RPCData.DEFAULT_BLOCK_SIZE];
-            int bytesRead = aFileName.Length;           
-            RPCData data = new RPCData()
+            string fileName     = Path.GetFileName(filepath);
+            bool   isZippedFile = fileName.ToLower().Contains(LuaEngineConstants.ZIP_EXTENSION);
+            byte[] aFileName    = Encoding.Default.GetBytes(fileName);
+            byte[] buffer       = new byte[RPCData.DEFAULT_BLOCK_SIZE];
+            int bytesRead       = aFileName.Length;           
+            RPCData data        = new RPCData()
             {
                 Type = RPCData.TYPE_LUA_FILENAME,
                 EndOfData = false,
+                IsZipped = isZippedFile,
                 Data = aFileName 
             };
 
@@ -77,13 +79,12 @@ namespace RPCLibrary.Command
                 }
             }
 
-            bytesRead = RPCData.DEFAULT_BLOCK_SIZE;
-            data.Type = RPCData.TYPE_LUA_EXECUTABLE;
+            bytesRead     = RPCData.DEFAULT_BLOCK_SIZE;
+            data.Type     = RPCData.TYPE_LUA_EXECUTABLE;
             data.DataSize = bytesRead;
-            data.Data = buffer;
+            data.Data     = buffer;
 
-            // Read Lua executable script on 512 bytes chunks and send to execute on server
-
+            // Read Lua executable script on DEFAULT_BLOCK_SIZE byte chunks and send to execute on server
             while (!data.EndOfData)
             {
                 bytesRead = fs.Read(buffer, 0, buffer.Length);

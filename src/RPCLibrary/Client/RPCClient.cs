@@ -54,6 +54,7 @@ namespace RPCLibrary.Client
 
                     writer.Write(data.Type);
                     writer.Write(data.EndOfData);
+                    writer.Write(data.IsZipped);
                     writer.Write(data.DataSize);
 
                     if (data.Data != null)
@@ -81,6 +82,7 @@ namespace RPCLibrary.Client
 
                 data.Type = reader.ReadInt32();
                 data.EndOfData = reader.ReadBoolean();
+                data.IsZipped  = reader.ReadBoolean();
                 data.DataSize  = reader.ReadInt32();
 
                 if (data.DataSize > 0)
