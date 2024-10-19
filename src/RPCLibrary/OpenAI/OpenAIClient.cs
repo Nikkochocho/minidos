@@ -7,6 +7,8 @@ namespace RPCLibrary
 {
     public class OpenAIClient
     {
+        private const int __DEFAULT_MAX_TOKENS = 2048;
+
         private struct GPTPayload    // Chat GPT payload
         {
             public string model { get; set; }
@@ -15,13 +17,17 @@ namespace RPCLibrary
             public int temperature { get; set; }
         }
 
-        private readonly HttpClient _httpClient;  // HTTP client for sending requests
-        private readonly string     _apiKey;      // OpenAI API key
+        private readonly HttpClient _httpClient;   // HTTP client for sending requests
+        private readonly string     _apiKey;       // OpenAI API key
 
-        public OpenAIClient(string apiKey)
+        public int MaxTokens { get; set; } = __DEFAULT_MAX_TOKENS; // Response Max chars
+
+        public OpenAIClient(string apiKey, int maxTokens)
         {
             _apiKey     = apiKey;
             _httpClient = new HttpClient();
+            MaxTokens   = (maxTokens == 0 ? __DEFAULT_MAX_TOKENS : maxTokens);
+
             // Set the Authorization header with the API key
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
         }
@@ -32,7 +38,7 @@ namespace RPCLibrary
             {
                 model = "gpt-3.5-turbo-instruct", // Specify the model to use
                 prompt = question,                // Set the user's question as the prompt
-                max_tokens = 300,                 // Limit the response to 300 tokens
+                max_tokens = MaxTokens,           // Limit the response to MaxTokens property
                 temperature = 1                   // Set the randomness of the response
             };
 

@@ -9,16 +9,26 @@ namespace RPCLibrary.Server
     public class RPCServer
     {
         private readonly string __destinationPath;
+        private readonly OpenAIParms __openAiParms;
         private readonly string __openAiApiKey;
         private readonly TcpListener __server;
+        private readonly char[] __aCursor;
+        private int __cursorPos;
         private bool __listening;
 
 
-        public RPCServer(IPAddress address, int port, string destinationPath, string openAIApiKey)
+        public RPCServer(IPAddress address, int port, string destinationPath, OpenAIParms openAiParms)
         {
             __destinationPath = destinationPath;
-            __server = new TcpListener(address, port);
-            __openAiApiKey = openAIApiKey;
+            __server      = new TcpListener(address, port);
+            __openAiParms = openAiParms;
+
+            __aCursor     = new char[4];
+            __aCursor[0]  = '|';
+            __aCursor[1]  = '/';
+            __aCursor[2]  = '-';
+            __aCursor[3]  = '\\';
+            __cursorPos   = 0;
         }
 
         public bool Start()
@@ -122,7 +132,7 @@ namespace RPCLibrary.Server
                                         continue;
 
                                     case RPCData.TYPE_LUA_EXECUTABLE:
-                                        Console.WriteLine("RECEIVING LUA EXECUTABLE FILE CONTENT");
+                                        UpdateProgress("RECEIVING LUA EXECUTABLE FILE CONTENT ");
                                         fs?.Write(data.Data);
                                         fs?.Flush();
 
@@ -175,7 +185,7 @@ namespace RPCLibrary.Server
         {
             try
             {
-                LuaEngine lua = new LuaEngine(client, __openAiApiKey);
+                LuaEngine lua = new LuaEngine(client, __openAiParms);
 
                 lua.Args = (args ?? string.Empty);
 
@@ -187,6 +197,20 @@ namespace RPCLibrary.Server
                 return false;
             }
 
+        }
+        private void UpdateProgress(string title)
+        {
+            var pos = Console.GetCursorPosition();
+
+            Console.Write(title);
+
+            Console.Write( $"{__aCursor[__cursorPos]}" );
+            Console.SetCursorPosition(pos.Left, pos.Top);
+
+            if (__cursorPos == 3)
+                __cursorPos = 0;
+            else
+                __cursorPos++;
         }
     }
 }

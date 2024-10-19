@@ -147,8 +147,12 @@ namespace RPCLibrary.Command
                     Console.Clear();
                     break;
 
+                case RPCData.ANSI_SET_CURSOR_HOME_POSITION:
+                    Console.SetCursorPosition(0, 0);
+                    break;
+
                 default:
-                    Console.WriteLine(data);
+                    Console.Write(data);
                     break;
             }
         }

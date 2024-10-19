@@ -1,5 +1,6 @@
 {
   "OpenAI": {
-    "ApiKey": "YOUR_KEY_HERE"
+    "ApiKey": "YOUR_KEY_HERE",
+    "MaxTokens": 2048
   }
 }
