@@ -4,6 +4,7 @@ using RPCLibrary.Client;
 using RPCLibrary.DataProtocol;
 using System.Net.Sockets;
 using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace RPCLibrary
 {
@@ -46,8 +47,8 @@ namespace RPCLibrary
         private void SendScreenResponse(string text)
         {
             RPCClient rpcClient = new RPCClient(__tcpClient);
-            byte[] buffer = Encoding.Default.GetBytes(text);
-            RPCData data = new RPCData()
+            byte[]    buffer    = Encoding.Default.GetBytes(text);
+            RPCData   data      = new RPCData()
             {
                 Type = RPCData.TYPE_LUA_SCREEN_RESPONSE,
                 EndOfData = !__isScriptRunning,

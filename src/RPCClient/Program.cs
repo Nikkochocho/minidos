@@ -4,7 +4,7 @@ namespace RPCClientApp
 {
     class Program
     {
-        private const int    __WINDOW_HEIGHT  = 32;
+        private const int    __WINDOW_HEIGHT  = 33;
         private const string __RPC_CLIENT_APP = "RPC CLIENT";
         private const string __EXECUTE_LUA    = "exec";
         private const string __EXIT           = "exit";

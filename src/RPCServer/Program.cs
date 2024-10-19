@@ -12,7 +12,7 @@ namespace RPCServerApp
             public string? ApiKey { get; set; }
         }
 
-        private const int     __WINDOW_HEIGHT     = 32;
+        private const int     __WINDOW_HEIGHT     = 33;
         private const int     __PORT              = 1999;
         private const string  __RPC_SERVER_APP    = "RPC SERVER";
         private static string __DESTINATION_PATH  = "../../../Resources";
