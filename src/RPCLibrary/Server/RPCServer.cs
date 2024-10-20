@@ -2,20 +2,21 @@
 using System.Net;
 using RPCLibrary.Client;
 using RPCLibrary.DataProtocol;
+using System.IO.Compression;
 
 
 namespace RPCLibrary.Server
 {
     public class RPCServer
     {
-        private readonly string __destinationPath;
-        private readonly OpenAIParms __openAiParms;
-        private readonly string __openAiApiKey;
-        private readonly TcpListener __server;
-        private readonly char[] __aCursor;
-        private int __cursorPos;
-        private bool __listening;
+        private const int            __MAX_RETRIES = 10;
 
+        private readonly string      __destinationPath;
+        private readonly OpenAIParms __openAiParms;
+        private readonly TcpListener __server;
+        private readonly char[]      __aCursor;
+        private int                  __cursorPos;
+        private bool                 __listening;
 
         public RPCServer(IPAddress address, int port, string destinationPath, OpenAIParms openAiParms)
         {
@@ -92,11 +93,11 @@ namespace RPCLibrary.Server
 
                     _ = Task.Factory.StartNew(() =>
                     {
-                        string? fileName = null;
-                        string? cmdLineArgs = null;
-                        FileStream? fs = default;
-                        bool exit = false;
-
+                        string?     fileName     = null;
+                        string?     luaFileName  = null;
+                        string?     cmdLineArgs  = null;
+                        FileStream? fs           = default;
+                        bool        exit         = false;
 
                         while (!exit && Read(client, out RPCData data))
                         {
@@ -106,13 +107,15 @@ namespace RPCLibrary.Server
                                 switch (data.Type)
                                 {
                                     case RPCData.TYPE_LUA_FILENAME:
-                                        var luaFileName = System.Text.Encoding.Default.GetString(data.Data);
+                                        var ext = (data.IsZipped ? LuaEngineConstants.ZIP_EXTENSION : LuaEngineConstants.LUA_EXTENSION);
 
-                                        Console.WriteLine($"RECEIVED LUA EXECUTABLE FILE NAME [{luaFileName}]");
+                                        luaFileName = System.Text.Encoding.Default.GetString(data.Data);
+
+                                        UpdateProgress($"FOUND ==> [{luaFileName}] ");
 
                                         try
                                         {
-                                            var name = $"{__destinationPath}/{Path.GetRandomFileName()}.lua";
+                                            var name = $"{__destinationPath}/{Path.GetRandomFileName()}{ext}";
                                            
                                             fs = File.Open(name, FileMode.Create, FileAccess.Write, FileShare.Write);
                                             fileName = name;
@@ -128,11 +131,12 @@ namespace RPCLibrary.Server
 
                                     case RPCData.TYPE_LUA_PARMS:
                                         cmdLineArgs = System.Text.Encoding.Default.GetString(data.Data);
-                                        Console.WriteLine($"RECEIVED LUA COMMAND LINE ARGUMENTS [{cmdLineArgs}]");
+                                        UpdateProgress($"COMMAND LINE ARGUMENTS ==> [{cmdLineArgs}] ");
                                         continue;
 
                                     case RPCData.TYPE_LUA_EXECUTABLE:
-                                        UpdateProgress("RECEIVING LUA EXECUTABLE FILE CONTENT ");
+                                        UpdateProgress($"DOWNLOADING ==> [{luaFileName}] ");
+
                                         fs?.Write(data.Data);
                                         fs?.Flush();
 
@@ -142,14 +146,9 @@ namespace RPCLibrary.Server
                                             fs?.Close();
                                             fs = null;
 
-                                            if ((fileName == null) || !ExecLuaScript(client, fileName, cmdLineArgs))
+                                            if ((fileName == null) || !ExecLuaScript(client, fileName, luaFileName, cmdLineArgs, data.IsZipped))
                                             {
                                                 Console.WriteLine($"Error to executing file {fileName}");
-                                            }
-
-                                            if (fileName != null)
-                                            {
-                                                System.IO.File.Delete(fileName);
                                             }
 
                                             exit = true;
@@ -181,23 +180,127 @@ namespace RPCLibrary.Server
             return rpcClient.Recv(tcpClient, out data);
         }
 
-        private bool ExecLuaScript(TcpClient client, string filename, string? args)
+        private bool ExecLuaScript(TcpClient client, string filename, string originalFileName, string? args, bool isZipped)
         {
             try
             {
-                LuaEngine lua = new LuaEngine(client, __openAiParms);
+                LuaEngine lua         = new LuaEngine(client, __openAiParms);
+                bool      ret         = false;
+                bool      retry       = false;
+                string    targetFile  = filename;
+                string?   destination = null;
+                int       retryCount  = 0;
 
                 lua.Args = (args ?? string.Empty);
 
-                return lua.RunScript(filename);
+                if (isZipped)
+                {
+                    ret = ExtractExecutable(filename, out destination);
+
+                    if (!ret) 
+                    {
+                        Console.WriteLine($"Error extracting zipped file [{filename}]");
+
+                        if (!CleanExecutableData(filename, destination))
+                        {
+                            Console.WriteLine($"Error cleaning executable temporary data [{filename}]");
+                        }
+
+                        return ret;
+                    }
+
+                    var pos = originalFileName.ToLower().IndexOf(LuaEngineConstants.ZIP_EXTENSION, StringComparison.OrdinalIgnoreCase);
+
+                    ret = (pos >= 0);
+
+                    if(!ret)
+                    {
+                        Console.WriteLine($"Error extracting zipped file [{filename}]. Invalid extension");
+
+                        if (!CleanExecutableData(filename, destination))
+                        {
+                            Console.WriteLine($"Error cleaning executable temporary data [{filename}]");
+                        }
+
+                        return ret;
+                    }
+
+                    var luaFileName = originalFileName.Substring(0, pos); 
+
+                    targetFile = $"{destination}/{luaFileName}{LuaEngineConstants.LUA_EXTENSION}";
+                }
+
+                ret = lua.RunScript(targetFile);
+
+                do {
+                    retry = !CleanExecutableData(filename, destination);
+
+                    if (retry)
+                    {
+                        retryCount++;
+                        Thread.Sleep(1000);
+
+                        if (retryCount >= __MAX_RETRIES)
+                        {
+                            Console.WriteLine("Max retrties cleaning executable temporary data reached");
+                            retry = false;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Error cleaning executable temporary data [{filename}]. Retrying.");
+                        }
+                    }
+                } while (retry) ;
+
+                return ret;
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 return false;
             }
-
         }
+
+        private bool ExtractExecutable(string filename, out string? destination)
+        {
+            destination = $"{__destinationPath}/{Path.GetRandomFileName()}";
+
+            try
+            {
+                ZipFile.ExtractToDirectory(filename, destination);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+
+                destination = null;
+                return false;
+            }
+        }
+
+        private bool CleanExecutableData(string filename, string? destination)
+        {
+            try
+            {
+                File.Delete(filename);
+
+                if (destination != null)
+                {
+                    Directory.Delete(destination, true);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+
+                return false;
+            }
+        }
+
         private void UpdateProgress(string title)
         {
             var pos = Console.GetCursorPosition();
