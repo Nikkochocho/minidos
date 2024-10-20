@@ -21,7 +21,7 @@ namespace RPCLibrary.Command
 
             try
             {
-                fs = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.None);
+                fs = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.Read);
             }
             catch (Exception ex)
             {
