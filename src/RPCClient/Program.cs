@@ -4,21 +4,24 @@ namespace RPCClientApp
 {
     class Program
     {
+        private const int    __WINDOW_HEIGHT  = 33;
         private const string __RPC_CLIENT_APP = "RPC CLIENT";
-        private const string __EXECUTE_LUA = "exec";
-        private const string __EXIT = "exit";
-        private const string __HELP = "help";
+        private const string __EXECUTE_LUA    = "exec";
+        private const string __EXIT           = "exit";
+        private const string __HELP           = "help";
 
-        private static string __hostname = "127.0.0.1";
-        private static string __port = "1999";
-        private static string __filename = "../../../Resources/lua_sample.lua";
-        private static string __parms = "TEST PARMS";
+        private static string __hostname      = "127.0.0.1";
+        private static string __port          = "1999";
+        private static string __filename      = "../../../Resources/lua_sample.lua";
+        private static string __parms         = "TEST PARMS";
 
         static void Main(string[] args)
         {
             bool exit = false;
 
-            Console.Title = __RPC_CLIENT_APP;
+            Console.Title        = __RPC_CLIENT_APP;
+            Console.WindowHeight = __WINDOW_HEIGHT;
+
             Console.WriteLine("RPC Client started");
             Console.WriteLine();
             Console.Write("type ");

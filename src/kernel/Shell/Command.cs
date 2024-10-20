@@ -104,24 +104,33 @@ namespace MiniDOS.Shell
             }
             return false;
         }
-        private bool GetThreeParmsAndOptional(string[] parms, out string ret1, out string ret2, out string ret3, out string optional)
+        private bool GetTwoParmsAndOptional(string[] parms, out string ret1, out string ret2, out string optional)
         {
-            ret1 = ret2 = ret3 = optional = default;
+            ret1 = ret2 = optional = default;
 
-            if (parms.Length >= 4 && parms[1] != "" && parms[2] != "" && parms[3] != "")
+            if (parms.Length >= 3 && parms[1] != "" && parms[2] != "")
             {
                 ret1 = parms[1];
                 ret2 = parms[2];
-                ret3 = parms[3];
 
-                if (parms.Length == 5)
+                if (parms.Length == 4)
                 {
-                    optional = parms[4];
+                    optional = parms[3];
                 }
 
                 return true;
             }
             return false;
+        }
+
+        private string[]? GetHostPort(string hostPort)
+        {
+            var aHostPort = hostPort.Split(':');
+
+            if (aHostPort.Length == 2)
+                return aHostPort;
+
+            return null;
         }
 
         public Command( FileSystem.FileSystemManager fs )
@@ -304,12 +313,22 @@ namespace MiniDOS.Shell
 
                     case "exec":
                         {
-                            if (GetThreeParmsAndOptional(parms, out string hostname, out string port, out string filename, out string cmdLineParms))
+                            if (GetTwoParmsAndOptional(parms, out string hostPort, out string filename, out string cmdLineParms))
                             {
                                 string absFileNamePath = _fs.GetAbsolutePath(filename);
                                 RPCExecution exec = new RPCExecution();
+                                var aHostPort = GetHostPort(hostPort);
 
-                                if (exec.Execute(absFileNamePath, hostname, int.Parse(port), cmdLineParms))
+                                if (aHostPort == null)
+                                {
+                                    Console.WriteLine("Invalid hostname:port parameter. Is it in ip:port format ?");
+                                    return false;
+                                }
+
+                                var hostname = aHostPort[0];
+                                var port = int.Parse(aHostPort[1]);
+
+                                if (exec.Execute(absFileNamePath, hostname, port, cmdLineParms))
                                 {
                                     Console.WriteLine("Execution sucessfull");
                                 }
