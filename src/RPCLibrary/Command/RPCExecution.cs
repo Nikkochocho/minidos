@@ -34,6 +34,7 @@ namespace RPCLibrary.Command
             if (!ret)
             {
                 Console.WriteLine("Error handling execution");
+                fs.Close();
                 return false;
             }
 
@@ -56,6 +57,7 @@ namespace RPCLibrary.Command
             if (!ret)
             {
                 Console.WriteLine("Error to send file name data");
+                fs.Close();
                 __client.Close();
 
                 return false;
@@ -73,6 +75,7 @@ namespace RPCLibrary.Command
                 if (!ret)
                 {
                     Console.WriteLine("Error to send lua parameters data");
+                    fs.Close();
                     __client.Close();
 
                     return false;
@@ -106,13 +109,14 @@ namespace RPCLibrary.Command
                 }
             }
 
+            fs.Close();
+
             // Receive and process Lua screen response
             if (ret)
             {
                 ReceiveLuaScreenResponse();
             }
 
-            fs.Close();
             __client.Close();
 
             return ret;
