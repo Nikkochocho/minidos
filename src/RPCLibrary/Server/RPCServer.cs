@@ -9,12 +9,14 @@ namespace RPCLibrary.Server
 {
     public class RPCServer
     {
-        private readonly string __destinationPath;
+        private const int            __MAX_RETRIES = 10;
+
+        private readonly string      __destinationPath;
         private readonly OpenAIParms __openAiParms;
         private readonly TcpListener __server;
-        private readonly char[] __aCursor;
-        private int __cursorPos;
-        private bool __listening;
+        private readonly char[]      __aCursor;
+        private int                  __cursorPos;
+        private bool                 __listening;
 
 
         public RPCServer(IPAddress address, int port, string destinationPath, OpenAIParms openAiParms)
@@ -110,7 +112,7 @@ namespace RPCLibrary.Server
 
                                         luaFileName = System.Text.Encoding.Default.GetString(data.Data);
 
-                                        UpdateProgress($"RECEIVED LUA EXECUTABLE FILE NAME [{luaFileName}] ");
+                                        UpdateProgress($"FOUND ==> [{luaFileName}] ");
 
                                         try
                                         {
@@ -130,11 +132,11 @@ namespace RPCLibrary.Server
 
                                     case RPCData.TYPE_LUA_PARMS:
                                         cmdLineArgs = System.Text.Encoding.Default.GetString(data.Data);
-                                        UpdateProgress($"RECEIVED LUA COMMAND LINE ARGUMENTS [{cmdLineArgs}] ");
+                                        UpdateProgress($"COMMAND LINE ARGUMENTS ==> [{cmdLineArgs}] ");
                                         continue;
 
                                     case RPCData.TYPE_LUA_EXECUTABLE:
-                                        UpdateProgress($"RECEIVING LUA EXECUTABLE FILE CONTENT [{luaFileName}] ");
+                                        UpdateProgress($"DOWNLOADING ==> [{luaFileName}] ");
                                         fs?.Write(data.Data);
                                         fs?.Flush();
 
@@ -184,8 +186,10 @@ namespace RPCLibrary.Server
             {
                 LuaEngine lua         = new LuaEngine(client, __openAiParms);
                 bool      ret         = false;
+                bool      retry       = false;
                 string    targetFile  = filename;
                 string?   destination = null;
+                int       retryCount  = 0;
 
                 lua.Args = (args ?? string.Empty);
 
@@ -228,10 +232,25 @@ namespace RPCLibrary.Server
 
                 ret = lua.RunScript(targetFile);
 
-                if (!CleanExecutableData(filename, destination))
-                {
-                    Console.WriteLine($"Error cleaning executable temporary data [{filename}]");
-                }
+                do {
+                    retry = !CleanExecutableData(filename, destination);
+
+                    if (retry)
+                    {
+                        retryCount++;
+                        Thread.Sleep(1000);
+
+                        if (retryCount >= __MAX_RETRIES)
+                        {
+                            Console.WriteLine("Max retrties cleaning executable temporary data reached");
+                            retry = false;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Error cleaning executable temporary data [{filename}]. Retrying.");
+                        }
+                    }
+                } while (retry) ;
 
                 return ret;
             }

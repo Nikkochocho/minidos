@@ -1,10 +1,10 @@
 ﻿using KeraLua;
+using NetCoreAudio;
 using NLua;
 using RPCLibrary.Client;
 using RPCLibrary.DataProtocol;
 using System.Net.Sockets;
 using System.Text;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace RPCLibrary
 {
@@ -28,6 +28,7 @@ namespace RPCLibrary
         private readonly OpenAIParms __openAiParms;
         private bool                 __isScriptRunning = false;
         private bool                 __enableAutoCarriageReturn = true;
+        private string               __currentPath;
 
         public string Args { get; set; } = "";
 
@@ -44,6 +45,7 @@ namespace RPCLibrary
         {
 
             __isScriptRunning = true;
+            __currentPath = $"{Path.GetDirectoryName(fileName)}{Path.DirectorySeparatorChar}";
             __state.DoFile(fileName);
             __isScriptRunning = false;
 
@@ -102,6 +104,16 @@ namespace RPCLibrary
                                     typeof(LuaEngine).GetMethod(nameof(LuaEngine._askGPT),
                                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
             __state.DoString(@"ask_gpt = function(question) return _askGPT(question); end");
+            __state.RegisterFunction(nameof(_play),
+                                    this,
+                                    typeof(LuaEngine).GetMethod(nameof(LuaEngine._play),
+                                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
+            __state.DoString(@"play = function(filename) return _play(filename); end");
+            __state.RegisterFunction(nameof(_getCurrentPath),
+                                    this,
+                                    typeof(LuaEngine).GetMethod(nameof(LuaEngine._getCurrentPath),
+                                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
+            __state.DoString(@"get_current_path = function() return _getCurrentPath(); end");
         }
 
         private void _print(LuaTable luaTable)
@@ -140,6 +152,7 @@ namespace RPCLibrary
             Console.Clear();
             SendScreenResponse(RPCData.ANSI_CLEAR_SCREEN_CODE);
         }
+
         private void _home()
         {
             Console.SetCursorPosition(0, 0);
@@ -156,6 +169,28 @@ namespace RPCLibrary
             OpenAIClient openAI = new OpenAIClient(__openAiParms.ApiKey, __openAiParms.MaxTokens);
 
             return openAI.Ask(question);
+        }
+
+        private bool _play(string filename)
+        {
+            Player player = new Player();
+
+            try
+            {
+                player.Play(filename).Wait();
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return false;
+            }
+        }
+
+        private string _getCurrentPath()
+        {
+            return __currentPath;
         }
     }
 }

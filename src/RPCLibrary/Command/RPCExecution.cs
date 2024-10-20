@@ -106,10 +106,10 @@ namespace RPCLibrary.Command
                 }
             }
 
-            // Receive and process client responses
+            // Receive and process Lua screen response
             if (ret)
             {
-                ReceiveClientResponse();
+                ReceiveLuaScreenResponse();
             }
 
             fs.Close();
@@ -118,9 +118,9 @@ namespace RPCLibrary.Command
             return ret;
         }
 
-        private void ReceiveClientResponse()
+        private void ReceiveLuaScreenResponse()
         {
-            // Receive and process client responses
+            // Receive and process Lua script responses
             while (__client.Recv(out RPCData data))
             {
                 switch (data.Type)
