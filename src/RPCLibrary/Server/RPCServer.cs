@@ -18,7 +18,6 @@ namespace RPCLibrary.Server
         private int                  __cursorPos;
         private bool                 __listening;
 
-
         public RPCServer(IPAddress address, int port, string destinationPath, OpenAIParms openAiParms)
         {
             __destinationPath = destinationPath;
@@ -137,6 +136,7 @@ namespace RPCLibrary.Server
 
                                     case RPCData.TYPE_LUA_EXECUTABLE:
                                         UpdateProgress($"DOWNLOADING ==> [{luaFileName}] ");
+
                                         fs?.Write(data.Data);
                                         fs?.Flush();
 

@@ -45,7 +45,8 @@ namespace RPCLibrary
         {
 
             __isScriptRunning = true;
-            __currentPath = $"{Path.GetDirectoryName(fileName)}{Path.DirectorySeparatorChar}";
+            __currentPath     = $"{Path.GetDirectoryName(fileName)}{Path.DirectorySeparatorChar}";
+
             __state.DoFile(fileName);
             __isScriptRunning = false;
 
