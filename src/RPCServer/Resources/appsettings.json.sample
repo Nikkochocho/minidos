@@ -2,5 +2,7 @@
   "OpenAI": {
     "ApiKey": "YOUR_KEY_HERE",
     "MaxTokens": 2048
-  }
+  },
+  "SharedFolder": "../../../Share/",
+  "DownloadFolder": "../../../Resources/"
 }

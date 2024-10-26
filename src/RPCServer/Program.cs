@@ -15,7 +15,6 @@ namespace RPCServerApp
         private const int     __WINDOW_HEIGHT     = 33;
         private const int     __PORT              = 1999;
         private const string  __RPC_SERVER_APP    = "RPC SERVER";
-        private static string __DESTINATION_PATH  = "../../../Resources";
         private static string __APP_SETTINGS_PATH = "../../../../Resources";
 
         static void Main(string[] args)
@@ -27,12 +26,14 @@ namespace RPCServerApp
                     .SetBasePath(configPath)
                     .AddJsonFile("appsettings.json")
                     .Build();
-                OpenAIParms openAiParms = new OpenAIParms()
+                ServerParms parms = new ServerParms()
                 {
-                    ApiKey    = config["OpenAI:ApiKey"],
-                    MaxTokens = int.Parse(config["OpenAI:MaxTokens"]),
+                    ApiKey         = config["OpenAI:ApiKey"],
+                    MaxTokens      = int.Parse(config["OpenAI:MaxTokens"]),
+                    SharedFolder   = config["SharedFolder"],
+                    DownloadFolder = config["DownloadFolder"],
                 };
-                RPCServer server = new RPCServer(IPAddress.Any, 1999, __DESTINATION_PATH, openAiParms);
+                RPCServer server = new RPCServer(IPAddress.Any, 1999, parms);
 
                 Console.Title        = $"{__RPC_SERVER_APP} - {IPAddress.Any}:{__PORT}";
                 Console.WindowHeight = __WINDOW_HEIGHT;

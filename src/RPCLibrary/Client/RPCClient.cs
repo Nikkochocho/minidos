@@ -1,13 +1,27 @@
 ﻿using RPCLibrary.DataProtocol;
+using System.IO;
+using System.Net.Http;
 using System.Net.Sockets;
 
 namespace RPCLibrary.Client
 {
     public class RPCClient
     {
-        private readonly TcpClient __tcpClient;
+        private readonly TcpClient     __tcpClient;
+        private BinaryWriter           __writer;
+        private BinaryReader           __reader;
+
 
         public bool EnableAllExceptions { get; set; } = false;
+
+
+        private void Init()
+        {
+            NetworkStream stream = __tcpClient.GetStream();
+
+            __writer = new BinaryWriter(stream);
+            __reader = new BinaryReader(stream);
+        }
 
         public RPCClient()
         {
@@ -17,6 +31,7 @@ namespace RPCLibrary.Client
         public RPCClient(TcpClient tcpClient)
         {
             __tcpClient = tcpClient;
+            Init();
         }
 
         public bool Connect(string host, int port)
@@ -24,6 +39,8 @@ namespace RPCLibrary.Client
             try
             {
                 __tcpClient.Connect(host, port);
+                Init();
+
                 return true;
             }
             catch (Exception ex)
@@ -49,17 +66,14 @@ namespace RPCLibrary.Client
             {
                 try
                 {
-                    NetworkStream stream = __tcpClient.GetStream();
-                    BinaryWriter  writer = new BinaryWriter(stream);
-
-                    writer.Write(data.Type);
-                    writer.Write(data.EndOfData);
-                    writer.Write(data.IsZipped);
-                    writer.Write(data.DataSize);
+                    __writer.Write(data.Type);
+                    __writer.Write(data.EndOfData);
+                    __writer.Write(data.IsZipped);
+                    __writer.Write(data.DataSize);
 
                     if (data.Data != null)
                     {
-                        writer.Write(data.Data);
+                        __writer.Write(data.Data);
                     }
                     return true;
                 }
@@ -72,15 +86,13 @@ namespace RPCLibrary.Client
             return false;
         }
 
-        public bool Recv(TcpClient client, out RPCData data)
+        public bool Recv(BinaryReader reader, out RPCData data)
         {
             try
             {
-                NetworkStream stream = client.GetStream();
-                BinaryReader reader = new BinaryReader(stream);
                 data = new RPCData();
 
-                data.Type = reader.ReadInt32();
+                data.Type      = reader.ReadInt32();
                 data.EndOfData = reader.ReadBoolean();
                 data.IsZipped  = reader.ReadBoolean();
                 data.DataSize  = reader.ReadInt32();
@@ -107,7 +119,7 @@ namespace RPCLibrary.Client
 
         public bool Recv(out RPCData data)
         {
-            return Recv(__tcpClient, out data);
+            return Recv(__reader, out data);
         }
     }
 }

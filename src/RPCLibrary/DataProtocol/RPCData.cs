@@ -8,6 +8,9 @@ namespace RPCLibrary.DataProtocol
         public const string ANSI_CLEAR_SCREEN_CODE        = "\033[2J";
         public const string ANSI_SET_CURSOR_HOME_POSITION = "\033[H";
 
+        // Resources that executes on server
+        public const string SERVER_SHARED_FILE_PROTOCOL = "share://"; 
+
         public const int DEFAULT_BLOCK_SIZE               = 512;
 
         public const int TYPE_LUA_FILENAME                = 0;

@@ -11,25 +11,23 @@ namespace RPCLibrary.Server
     {
         private const int            __MAX_RETRIES = 10;
 
-        private readonly string      __destinationPath;
-        private readonly OpenAIParms __openAiParms;
+        private readonly ServerParms __parms;
         private readonly TcpListener __server;
         private readonly char[]      __aCursor;
         private int                  __cursorPos;
         private bool                 __listening;
 
-        public RPCServer(IPAddress address, int port, string destinationPath, OpenAIParms openAiParms)
+        public RPCServer(IPAddress address, int port, ServerParms parms)
         {
-            __destinationPath = destinationPath;
-            __server      = new TcpListener(address, port);
-            __openAiParms = openAiParms;
+            __server = new TcpListener(address, port);
+            __parms  = parms;
 
-            __aCursor     = new char[4];
-            __aCursor[0]  = '|';
-            __aCursor[1]  = '/';
-            __aCursor[2]  = '-';
-            __aCursor[3]  = '\\';
-            __cursorPos   = 0;
+            __aCursor    = new char[4];
+            __aCursor[0] = '|';
+            __aCursor[1] = '/';
+            __aCursor[2] = '-';
+            __aCursor[3] = '\\';
+            __cursorPos  = 0;
         }
 
         public bool Start()
@@ -75,7 +73,7 @@ namespace RPCLibrary.Server
         {
             if (__listening)
             {
-                while (true)
+                while (__listening)
                 {
                     TcpClient? client;
 
@@ -89,82 +87,7 @@ namespace RPCLibrary.Server
                         break;
                     }
 
-                    Console.WriteLine("Handling new connection");
-
-                    _ = Task.Factory.StartNew(() =>
-                    {
-                        string?     fileName     = null;
-                        string?     luaFileName  = null;
-                        string?     cmdLineArgs  = null;
-                        FileStream? fs           = default;
-                        bool        exit         = false;
-
-                        while (!exit && Read(client, out RPCData data))
-                        {
-                            // Send response based on client packet request type
-                            if (data.Data != null)
-                            {
-                                switch (data.Type)
-                                {
-                                    case RPCData.TYPE_LUA_FILENAME:
-                                        var ext = (data.IsZipped ? LuaEngineConstants.ZIP_EXTENSION : LuaEngineConstants.LUA_EXTENSION);
-
-                                        luaFileName = System.Text.Encoding.Default.GetString(data.Data);
-
-                                        UpdateProgress($"FOUND ==> [{luaFileName}] ");
-
-                                        try
-                                        {
-                                            var name = $"{__destinationPath}/{Path.GetRandomFileName()}{ext}";
-                                           
-                                            fs = File.Open(name, FileMode.Create, FileAccess.Write, FileShare.Write);
-                                            fileName = name;
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            Console.WriteLine(ex.Message);
-                                            fs?.Close();
-                                            fs = null;
-                                            exit = true;
-                                        }
-                                        continue;
-
-                                    case RPCData.TYPE_LUA_PARMS:
-                                        cmdLineArgs = System.Text.Encoding.Default.GetString(data.Data);
-                                        UpdateProgress($"COMMAND LINE ARGUMENTS ==> [{cmdLineArgs}] ");
-                                        continue;
-
-                                    case RPCData.TYPE_LUA_EXECUTABLE:
-                                        UpdateProgress($"DOWNLOADING ==> [{luaFileName}] ");
-
-                                        fs?.Write(data.Data);
-                                        fs?.Flush();
-
-                                        // Execute Lua script sending screen content
-                                        if (data.EndOfData)
-                                        {
-                                            fs?.Close();
-                                            fs = null;
-
-                                            if ((fileName == null) || !ExecLuaScript(client, fileName, luaFileName, cmdLineArgs, data.IsZipped))
-                                            {
-                                                Console.WriteLine($"Error to executing file {fileName}");
-                                            }
-
-                                            exit = true;
-                                            fileName = null;
-                                            cmdLineArgs = null;
-                                        }
-                                        break;
-                                }
-                            }
-                        }
-
-                        client?.Close();
-                        fs?.Close();
-
-                        Console.WriteLine("Client connection handling finished");
-                    });
+                    StartClientThread(client);
                 }
 
                 return true;
@@ -173,18 +96,122 @@ namespace RPCLibrary.Server
             return false;
         }
 
-        private bool Read(TcpClient tcpClient, out RPCData data)
+        private void StartClientThread(TcpClient client)
         {
-            RPCClient rpcClient = new RPCClient(tcpClient);
+            _ = Task.Factory.StartNew(() =>
+            {
+                FileStream? fs          = default;
+                string?     fileName    = null;
+                string?     luaFileName = null;
+                string?     cmdLineArgs = null;
+                bool        exit        = false;
+                bool        isShare     = false;
+                bool        isZipped    = false;
 
-            return rpcClient.Recv(tcpClient, out data);
+                Console.WriteLine("Handling new connection");
+
+                while (!exit && Read(client, out RPCData? data))
+                {
+                    // Send response based on client packet request type
+                    if (data?.Data != null)
+                    {
+                        switch (data.Type)
+                        {
+                            case RPCData.TYPE_LUA_FILENAME:
+                                var ext = (data.IsZipped ? LuaEngineConstants.ZIP_EXTENSION : LuaEngineConstants.LUA_EXTENSION);
+
+                                luaFileName = System.Text.Encoding.Default.GetString(data.Data);
+                                isShare     = luaFileName.ToLower().Contains(RPCData.SERVER_SHARED_FILE_PROTOCOL);
+                                isZipped    = data.IsZipped;
+
+                                UpdateProgress($"FOUND ==> [{luaFileName}] ");
+
+                                if (!isShare)
+                                {
+                                    try
+                                    {
+                                        fileName = $"{__parms.DownloadFolder}/{Path.GetRandomFileName()}{ext}";
+                                        fs = File.Open(fileName, FileMode.Create, FileAccess.Write, FileShare.Write);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Console.WriteLine(ex.Message);
+                                        fs?.Close();
+                                        fs = null;
+                                        exit = true;
+                                    }
+                                }
+                                else
+                                {
+                                    luaFileName = luaFileName.Remove(0, RPCData.SERVER_SHARED_FILE_PROTOCOL.Length);
+                                    fileName    = $"{__parms.SharedFolder}/{luaFileName}";
+                                    exit = data.EndOfData;
+                                }
+                                continue;
+
+                            case RPCData.TYPE_LUA_PARMS:
+                                cmdLineArgs = System.Text.Encoding.Default.GetString(data.Data);
+                                exit = data.EndOfData;
+                                UpdateProgress($"COMMAND LINE ARGUMENTS ==> [{cmdLineArgs}] ");
+                                continue;
+
+                            case RPCData.TYPE_LUA_EXECUTABLE:
+                                if (!isShare && fs != null)
+                                {
+                                    UpdateProgress($"DOWNLOADING ==> [{luaFileName}] ");
+
+                                    fs?.Write(data.Data);
+                                    fs?.Flush();
+
+                                    // Execute Lua script sending screen content
+                                    if (data.EndOfData)
+                                    {
+                                        exit     = true;
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                }
+
+                fs?.Close();
+
+                // Execute Lua script
+                if ((fileName == null) || !ExecLuaScript(client, fileName, luaFileName, cmdLineArgs, isZipped, isShare))
+                {
+                    Console.WriteLine($"Error to executing file {fileName}");
+                }
+
+                client?.Close();
+
+                Console.WriteLine("Client connection handling finished");
+            });
         }
 
-        private bool ExecLuaScript(TcpClient client, string filename, string originalFileName, string? args, bool isZipped)
+        private bool Read(TcpClient tcpClient, out RPCData? data)
+        {
+            data = default;
+
+            try
+            {
+                RPCClient rpcClient = new RPCClient(tcpClient);
+                NetworkStream stream = tcpClient.GetStream();
+                BinaryReader reader = new BinaryReader(stream);
+
+                return rpcClient.Recv(reader, out data);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error reading {ex.Message}");
+                return false;
+            }
+        }
+
+        private bool ExecLuaScript(TcpClient client, string filename, string originalFileName, string? args, bool isZipped, bool isShare)
         {
             try
             {
-                LuaEngine lua         = new LuaEngine(client, __openAiParms);
+                LuaEngine lua         = new LuaEngine(client, __parms);
                 bool      ret         = false;
                 bool      retry       = false;
                 string    targetFile  = filename;
@@ -195,7 +222,7 @@ namespace RPCLibrary.Server
 
                 if (isZipped)
                 {
-                    ret = ExtractExecutable(filename, out destination);
+                    ret = ExtractExecutable(filename, isShare, out destination);
 
                     if (!ret) 
                     {
@@ -261,9 +288,11 @@ namespace RPCLibrary.Server
             }
         }
 
-        private bool ExtractExecutable(string filename, out string? destination)
+        private bool ExtractExecutable(string filename, bool isShare,out string? destination)
         {
-            destination = $"{__destinationPath}/{Path.GetRandomFileName()}";
+            string path = (isShare ? __parms.SharedFolder : __parms.DownloadFolder);
+
+            destination = $"{path}/{Path.GetRandomFileName()}";
 
             try
             {

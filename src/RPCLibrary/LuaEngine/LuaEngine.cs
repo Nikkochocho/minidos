@@ -14,18 +14,19 @@ namespace RPCLibrary
         public const string LUA_EXTENSION = ".lua";
     }
 
-    public record OpenAIParms
+    public record ServerParms
     {
+        public string DownloadFolder { get; set; }
+        public string SharedFolder { get; set; }
         public string ApiKey { get; set; }
         public int MaxTokens { get; set; }
-
     }
 
     public class LuaEngine
     {
         private NLua.Lua             __state = new NLua.Lua();
         private readonly TcpClient   __tcpClient;
-        private readonly OpenAIParms __openAiParms;
+        private readonly ServerParms __parms;
         private bool                 __isScriptRunning = false;
         private bool                 __enableAutoCarriageReturn = true;
         private string               __currentPath;
@@ -33,10 +34,10 @@ namespace RPCLibrary
         public string Args { get; set; } = "";
 
 
-        public LuaEngine(TcpClient tcpClient, OpenAIParms openAiParms)
+        public LuaEngine(TcpClient tcpClient, ServerParms parms)
         {
-            __tcpClient   = tcpClient;
-            __openAiParms = openAiParms;
+            __tcpClient = tcpClient;
+            __parms     = parms;
 
             RegisterLuaFunctions();
         }
@@ -53,18 +54,33 @@ namespace RPCLibrary
             return true;
         }
 
+        public void StopScript()
+        {
+            if(__isScriptRunning)
+            {
+                // TODO: FINISH HIM !!!
+            }
+        }
+
         private void SendScreenResponse(string text)
         {
-            RPCClient rpcClient = new RPCClient(__tcpClient);
-            byte[]    buffer    = Encoding.Default.GetBytes(text);
-            RPCData   data      = new RPCData()
+            try
             {
-                Type = RPCData.TYPE_LUA_SCREEN_RESPONSE,
-                EndOfData = !__isScriptRunning,
-                Data = buffer,
-            };
+                RPCClient rpcClient = new RPCClient(__tcpClient);
+                byte[] buffer = Encoding.Default.GetBytes(text);
+                RPCData data = new RPCData()
+                {
+                    Type = RPCData.TYPE_LUA_SCREEN_RESPONSE,
+                    EndOfData = !__isScriptRunning,
+                    Data = buffer,
+                };
 
-            rpcClient.Send(data);
+                rpcClient.Send(data);
+            }
+            catch (Exception ex)
+            {
+                StopScript();
+            }
         }
 
         private void RegisterLuaFunctions()
@@ -167,7 +183,7 @@ namespace RPCLibrary
 
         private string _askGPT(string question)
         {
-            OpenAIClient openAI = new OpenAIClient(__openAiParms.ApiKey, __openAiParms.MaxTokens);
+            OpenAIClient openAI = new OpenAIClient(__parms.ApiKey, __parms.MaxTokens);
 
             return openAI.Ask(question);
         }
