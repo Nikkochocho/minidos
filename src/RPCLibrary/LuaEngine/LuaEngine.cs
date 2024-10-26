@@ -64,6 +64,12 @@ namespace RPCLibrary
 
         private void SendScreenResponse(string text)
         {
+            if(!__tcpClient.Connected)
+            {
+                StopScript();
+                return;
+            }
+
             try
             {
                 RPCClient rpcClient = new RPCClient(__tcpClient);

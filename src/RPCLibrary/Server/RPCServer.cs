@@ -143,7 +143,10 @@ namespace RPCLibrary.Server
                                 }
                                 else
                                 {
-                                    luaFileName = luaFileName.Remove(0, RPCData.SERVER_SHARED_FILE_PROTOCOL.Length);
+                                    var pos     = luaFileName.IndexOf(RPCData.SERVER_SHARED_FILE_PROTOCOL);
+
+                                    pos += RPCData.SERVER_SHARED_FILE_PROTOCOL.Length;
+                                    luaFileName = luaFileName.Remove(0, pos);
                                     fileName    = $"{__parms.SharedFolder}/{luaFileName}";
                                     exit = data.EndOfData;
                                 }
