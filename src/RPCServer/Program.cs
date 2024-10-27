@@ -17,7 +17,7 @@
 
 using Microsoft.Extensions.Configuration;
 using System.Net;
-using RPCLibrary.Server;
+using RPCLibrary.RPC;
 using RPCLibrary;
 using RPCLibrary.Config;
 

@@ -18,9 +18,8 @@
 using KeraLua;
 using NetCoreAudio;
 using NLua;
-using RPCLibrary.Client;
 using RPCLibrary.Config;
-using RPCLibrary.DataProtocol;
+using RPCLibrary.RPC;
 using System.Net.Sockets;
 using System.Text;
 

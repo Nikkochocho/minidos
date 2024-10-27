@@ -20,11 +20,11 @@ using Cosmos.System.FileSystem;
 using Cosmos.System.Network.Config;
 using Cosmos.System.Network.IPv4.UDP.DHCP;
 using CosmosFtpServer;
-using RPCLibrary.Command;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using RPCLibrary.RPC;
 
 
 namespace MiniDOS.Shell

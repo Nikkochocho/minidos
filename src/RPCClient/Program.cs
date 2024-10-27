@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using RPCLibrary.Command;
+using RPCLibrary.RPC;
 
 namespace RPCClientApp
 {
