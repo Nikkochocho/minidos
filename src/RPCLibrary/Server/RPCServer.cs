@@ -248,7 +248,7 @@ namespace RPCLibrary.Server
                     {
                         Console.WriteLine($"Error extracting zipped file [{filename}]");
 
-                        if (!CleanExecutableData(filename, destination))
+                        if (!CleanExecutableData(filename, destination, isShare))
                         {
                             Console.WriteLine($"Error cleaning executable temporary data [{filename}]");
                         }
@@ -264,7 +264,7 @@ namespace RPCLibrary.Server
                     {
                         Console.WriteLine($"Error extracting zipped file [{filename}]. Invalid extension");
 
-                        if (!CleanExecutableData(filename, destination))
+                        if (!CleanExecutableData(filename, destination, isShare))
                         {
                             Console.WriteLine($"Error cleaning executable temporary data [{filename}]");
                         }
@@ -280,7 +280,7 @@ namespace RPCLibrary.Server
                 ret = lua.RunScript(targetFile);
 
                 do {
-                    retry = !CleanExecutableData(filename, destination);
+                    retry = !CleanExecutableData(filename, destination, isShare);
 
                     if (retry)
                     {
@@ -304,10 +304,7 @@ namespace RPCLibrary.Server
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-
-                var file = (isShare ? null : filename);
-
-                CleanExecutableData(file, destination);
+                CleanExecutableData(filename, destination, isShare);
 
                 return false;
             }
@@ -334,11 +331,11 @@ namespace RPCLibrary.Server
             }
         }
 
-        private bool CleanExecutableData(string? filename, string? destination)
+        private bool CleanExecutableData(string? filename, string? destination, bool isShare)
         {
             try
             {
-                if (filename != null)
+                if (!isShare)
                 {
                     File.Delete(filename);
                 }
