@@ -45,10 +45,9 @@ function play_decoder(aFrameBuffer)
 		end
 
 		frame_buffer = frame_buffer.."\n"
+		lcount = lcount + 1
 		
-		if(lcount < __MAX_ROWS)  then
-			lcount = lcount + 1
-		else
+		if(lcount > __MAX_ROWS)  then
 			home()
 			print(frame_buffer)
 			wait(__FREQ_SLEEP)
