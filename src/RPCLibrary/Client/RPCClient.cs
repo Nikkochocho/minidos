@@ -1,15 +1,15 @@
 ﻿using RPCLibrary.DataProtocol;
-using System.IO;
-using System.Net.Http;
 using System.Net.Sockets;
 
 namespace RPCLibrary.Client
 {
     public class RPCClient
     {
+        private const int              __DEFAULT_BUFFER_SIZE = 5120;  // 1024 * n (n=5)
+
         private readonly TcpClient     __tcpClient;
-        private BinaryWriter           __writer;
-        private BinaryReader           __reader;
+        private BinaryWriter?          __writer = null;
+        private BinaryReader?          __reader = null;
 
 
         public bool EnableAllExceptions { get; set; } = false;
@@ -17,7 +17,7 @@ namespace RPCLibrary.Client
 
         private void Init()
         {
-            NetworkStream stream = __tcpClient.GetStream();
+            BufferedStream stream = new BufferedStream(__tcpClient.GetStream(), __DEFAULT_BUFFER_SIZE);
 
             __writer = new BinaryWriter(stream);
             __reader = new BinaryReader(stream);
@@ -86,7 +86,7 @@ namespace RPCLibrary.Client
             return false;
         }
 
-        public bool Recv(BinaryReader reader, out RPCData data)
+        public bool Recv(BinaryReader? reader, out RPCData data)
         {
             try
             {

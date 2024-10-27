@@ -12,7 +12,7 @@ namespace RPCClientApp
 
         private static string __hostname      = "127.0.0.1";
         private static string __port          = "1999";
-        private static string __filename      = "../../../Resources/bad_apple_hi_res.zip";
+        private static string __filename      = "../../../../LuaSamples/Binaries/bad_apple_hi_res.zip";
         private static string __parms         = "TEST PARMS";
 
         static void Main(string[] args)

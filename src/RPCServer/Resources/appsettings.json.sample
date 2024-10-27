@@ -3,6 +3,6 @@
     "ApiKey": "YOUR_KEY_HERE",
     "MaxTokens": 2048
   },
-  "SharedFolder": "../../../Share/",
+  "SharedFolder": "../../../../LuaSamples/Binaries/",
   "DownloadFolder": "../../../Resources/"
 }

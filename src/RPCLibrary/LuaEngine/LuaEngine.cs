@@ -26,6 +26,7 @@ namespace RPCLibrary
     {
         private NLua.Lua             __state = new NLua.Lua();
         private readonly TcpClient   __tcpClient;
+        private readonly RPCClient   __rpcClient;
         private readonly ServerParms __parms;
         private bool                 __isScriptRunning = false;
         private bool                 __enableAutoCarriageReturn = true;
@@ -36,6 +37,7 @@ namespace RPCLibrary
 
         public LuaEngine(TcpClient tcpClient, ServerParms parms)
         {
+            __rpcClient = new RPCClient(tcpClient);
             __tcpClient = tcpClient;
             __parms     = parms;
 
@@ -72,7 +74,6 @@ namespace RPCLibrary
 
             try
             {
-                RPCClient rpcClient = new RPCClient(__tcpClient);
                 byte[] buffer = Encoding.Default.GetBytes(text);
                 RPCData data = new RPCData()
                 {
@@ -81,7 +82,7 @@ namespace RPCLibrary
                     Data = buffer,
                 };
 
-                rpcClient.Send(data);
+                __rpcClient.Send(data);
             }
             catch (Exception ex)
             {
