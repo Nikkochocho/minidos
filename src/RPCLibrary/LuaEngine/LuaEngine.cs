@@ -71,6 +71,11 @@ namespace RPCLibrary
         public void StopScript()
         {
             __isScriptRunning = false;
+
+            // Stop audio queue
+            _stopPlayerQueue();
+
+            __state.State.Error("Lua Execution stopped");
         }
 
         private void SendScreenResponse(string text)
@@ -96,19 +101,6 @@ namespace RPCLibrary
             catch (Exception ex)
             {
                 StopScript();
-            }
-        }
-
-        private void StateDebugHook(object sender, NLua.Event.DebugHookEventArgs e)
-        {
-            if (!__isScriptRunning)
-            {
-                NLua.Lua l = (NLua.Lua)sender;
-
-                // Stop audio queue
-                _stopPlayerQueue();
-
-                l.State.Error("Lua Execution stopped");
             }
         }
 
@@ -165,10 +157,6 @@ namespace RPCLibrary
                                     typeof(LuaEngine).GetMethod(nameof(LuaEngine._getCurrentPath),
                                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
             __state.DoString(@"get_current_path = function() return _getCurrentPath(); end");
-
-            // This handler MUST TO BE ALWAYS THE LAST ONE registered 
-            __state.SetDebugHook(LuaHookMask.Line, 0);
-            __state.DebugHook += StateDebugHook;
         }
 
         private void _print(LuaTable luaTable)
