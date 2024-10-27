@@ -4,5 +4,6 @@
     "MaxTokens": 2048
   },
   "SharedFolder": "../../../../LuaSamples/Binaries/",
-  "DownloadFolder": "../../../Resources/"
+  "DownloadFolder": "../../../Resources/",
+  "ShowScreenContentOnServer": true
 }

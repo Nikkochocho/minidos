@@ -2,6 +2,7 @@
 using System.Net;
 using RPCLibrary.Server;
 using RPCLibrary;
+using RPCLibrary.Config;
 
 namespace RPCServerApp
 {
@@ -32,6 +33,7 @@ namespace RPCServerApp
                     MaxTokens      = int.Parse(config["OpenAI:MaxTokens"]),
                     SharedFolder   = config["SharedFolder"],
                     DownloadFolder = config["DownloadFolder"],
+                    ShowScreenContentOnServer = bool.Parse(config["ShowScreenContentOnServer"]),
                 };
                 RPCServer server = new RPCServer(IPAddress.Any, 1999, parms);
 

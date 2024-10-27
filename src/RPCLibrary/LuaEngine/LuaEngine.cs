@@ -2,6 +2,7 @@
 using NetCoreAudio;
 using NLua;
 using RPCLibrary.Client;
+using RPCLibrary.Config;
 using RPCLibrary.DataProtocol;
 using System.Net.Sockets;
 using System.Text;
@@ -14,32 +15,26 @@ namespace RPCLibrary
         public const string LUA_EXTENSION = ".lua";
     }
 
-    public record ServerParms
-    {
-        public string DownloadFolder { get; set; }
-        public string SharedFolder { get; set; }
-        public string ApiKey { get; set; }
-        public int MaxTokens { get; set; }
-    }
-
     public class LuaEngine
     {
-        private NLua.Lua             __state = new NLua.Lua();
-        private readonly TcpClient   __tcpClient;
-        private readonly RPCClient   __rpcClient;
-        private readonly ServerParms __parms;
-        private bool                 __isScriptRunning = false;
-        private bool                 __enableAutoCarriageReturn = true;
-        private string               __currentPath;
+        private NLua.Lua               __state = new NLua.Lua();
+        private readonly TcpClient     __tcpClient;
+        private readonly RPCClient     __rpcClient;
+        private readonly ServerParms   __parms;
+        private readonly List<Player>  __playerQueue;
+        private bool                   __isScriptRunning = false;
+        private bool                   __enableAutoCarriageReturn = true;
+        private string                 __currentPath;
 
         public string Args { get; set; } = "";
 
 
         public LuaEngine(TcpClient tcpClient, ServerParms parms)
         {
-            __rpcClient = new RPCClient(tcpClient);
-            __tcpClient = tcpClient;
-            __parms     = parms;
+            __playerQueue = new List<Player>();
+            __rpcClient   = new RPCClient(tcpClient);
+            __tcpClient   = tcpClient;
+            __parms       = parms;
 
             RegisterLuaFunctions();
         }
@@ -58,10 +53,7 @@ namespace RPCLibrary
 
         public void StopScript()
         {
-            if(__isScriptRunning)
-            {
-                // TODO: FINISH HIM !!!
-            }
+            __isScriptRunning = false;
         }
 
         private void SendScreenResponse(string text)
@@ -87,6 +79,19 @@ namespace RPCLibrary
             catch (Exception ex)
             {
                 StopScript();
+            }
+        }
+
+        private void StateDebugHook(object sender, NLua.Event.DebugHookEventArgs e)
+        {
+            if (!__isScriptRunning)
+            {
+                NLua.Lua l = (NLua.Lua)sender;
+
+                // Stop audio queue
+                _stopPlayerQueue();
+
+                l.State.Error("Lua Execution stopped");
             }
         }
 
@@ -133,11 +138,20 @@ namespace RPCLibrary
                                     typeof(LuaEngine).GetMethod(nameof(LuaEngine._play),
                                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
             __state.DoString(@"play = function(filename) return _play(filename); end");
+            __state.RegisterFunction(nameof(_stopPlayerQueue),
+                                    this,
+                                    typeof(LuaEngine).GetMethod(nameof(LuaEngine._stopPlayerQueue),
+                                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
+            __state.DoString(@"stop_player_queue = function() return _stopPlayerQueue(); end");
             __state.RegisterFunction(nameof(_getCurrentPath),
                                     this,
                                     typeof(LuaEngine).GetMethod(nameof(LuaEngine._getCurrentPath),
                                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
             __state.DoString(@"get_current_path = function() return _getCurrentPath(); end");
+
+            // This handler MUST TO BE ALWAYS THE LAST ONE registered 
+            __state.SetDebugHook(LuaHookMask.Line, 0);
+            __state.DebugHook += StateDebugHook;
         }
 
         private void _print(LuaTable luaTable)
@@ -156,7 +170,10 @@ namespace RPCLibrary
             var cr   = (__enableAutoCarriageReturn ? "\n" : "");
             var text = $"{strBuilder.ToString()}{cr}";
 
-            Console.Write(text);
+            if (__parms.ShowScreenContentOnServer)
+            {
+                Console.Write(text);
+            }
 
             SendScreenResponse(text);
         }
@@ -173,13 +190,21 @@ namespace RPCLibrary
 
         private void _clear()
         {
-            Console.Clear();
+            if (__parms.ShowScreenContentOnServer)
+            {
+                Console.Clear();
+            }
+
             SendScreenResponse(RPCData.ANSI_CLEAR_SCREEN_CODE);
         }
 
         private void _home()
         {
-            Console.SetCursorPosition(0, 0);
+            if (__parms.ShowScreenContentOnServer)
+            {
+                Console.SetCursorPosition(0, 0);
+            }
+
             SendScreenResponse(RPCData.ANSI_SET_CURSOR_HOME_POSITION);
         }
 
@@ -202,6 +227,7 @@ namespace RPCLibrary
             try
             {
                 player.Play(filename).Wait();
+                __playerQueue.Add(player);
 
                 return true;
             }
@@ -209,6 +235,14 @@ namespace RPCLibrary
             {
                 Console.WriteLine(e);
                 return false;
+            }
+        }
+
+        private void _stopPlayerQueue()
+        { 
+            foreach(Player player in __playerQueue)
+            {
+                player?.Stop();
             }
         }
 

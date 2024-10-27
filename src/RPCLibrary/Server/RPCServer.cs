@@ -3,6 +3,7 @@ using System.Net;
 using RPCLibrary.Client;
 using RPCLibrary.DataProtocol;
 using System.IO.Compression;
+using RPCLibrary.Config;
 
 
 namespace RPCLibrary.Server
@@ -179,6 +180,11 @@ namespace RPCLibrary.Server
 
                 fs?.Close();
 
+                if (luaFileName != null)
+                {
+                    UpdateProgress($"EXECUTING ==> [{luaFileName}] ");
+                }
+
                 // Execute Lua script
                 if ((fileName == null) || !ExecLuaScript(client, fileName, luaFileName, cmdLineArgs, isZipped, isShare))
                 {
@@ -212,13 +218,14 @@ namespace RPCLibrary.Server
 
         private bool ExecLuaScript(TcpClient client, string filename, string originalFileName, string? args, bool isZipped, bool isShare)
         {
+            string? destination = null;
+
             try
             {
                 LuaEngine lua         = new LuaEngine(client, __parms);
                 bool      ret         = false;
                 bool      retry       = false;
                 string    targetFile  = filename;
-                string?   destination = null;
                 int       retryCount  = 0;
 
                 lua.Args = (args ?? string.Empty);
@@ -287,6 +294,9 @@ namespace RPCLibrary.Server
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
+
+                CleanExecutableData(filename, destination);
+
                 return false;
             }
         }
