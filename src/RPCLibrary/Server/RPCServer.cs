@@ -21,6 +21,8 @@ using RPCLibrary.Client;
 using RPCLibrary.DataProtocol;
 using System.IO.Compression;
 using RPCLibrary.Config;
+using System.Reflection.PortableExecutable;
+using System.Net.Http;
 
 
 namespace RPCLibrary.Server
@@ -118,6 +120,7 @@ namespace RPCLibrary.Server
         {
             _ = Task.Factory.StartNew(() =>
             {
+                RPCClient   rpcClient   = new RPCClient(client);
                 FileStream? fs          = default;
                 string?     fileName    = null;
                 string?     luaFileName = null;
@@ -128,7 +131,7 @@ namespace RPCLibrary.Server
 
                 Console.WriteLine("Handling new connection");
 
-                while (!exit && Read(client, out RPCData? data))
+                while (!exit && rpcClient.Recv(out RPCData data))
                 {
                     // Send response based on client packet request type
                     if (data?.Data != null)
@@ -161,7 +164,7 @@ namespace RPCLibrary.Server
                                 }
                                 else
                                 {
-                                    var pos     = luaFileName.IndexOf(RPCData.SERVER_SHARED_FILE_PROTOCOL);
+                                    var pos = luaFileName.IndexOf(RPCData.SERVER_SHARED_FILE_PROTOCOL);
 
                                     pos += RPCData.SERVER_SHARED_FILE_PROTOCOL.Length;
                                     luaFileName = luaFileName.Remove(0, pos);
@@ -208,29 +211,19 @@ namespace RPCLibrary.Server
                     Console.WriteLine($"Error to executing file {fileName}");
                 }
 
+                try
+                {
+                    client?.GetStream().FlushAsync().Wait();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+
                 client?.Close();
 
                 Console.WriteLine("Client connection handling finished");
             });
-        }
-
-        private bool Read(TcpClient tcpClient, out RPCData? data)
-        {
-            data = default;
-
-            try
-            {
-                RPCClient rpcClient = new RPCClient(tcpClient);
-                NetworkStream stream = tcpClient.GetStream();
-                BinaryReader reader = new BinaryReader(stream);
-
-                return rpcClient.Recv(reader, out data);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error reading {ex.Message}");
-                return false;
-            }
         }
 
         private bool ExecLuaScript(TcpClient client, string filename, string originalFileName, string? args, bool isZipped, bool isShare)
@@ -312,7 +305,9 @@ namespace RPCLibrary.Server
             {
                 Console.WriteLine(ex.Message);
 
-                CleanExecutableData(filename, destination);
+                var file = (isShare ? null : filename);
+
+                CleanExecutableData(file, destination);
 
                 return false;
             }
@@ -339,11 +334,14 @@ namespace RPCLibrary.Server
             }
         }
 
-        private bool CleanExecutableData(string filename, string? destination)
+        private bool CleanExecutableData(string? filename, string? destination)
         {
             try
             {
-                File.Delete(filename);
+                if (filename != null)
+                {
+                    File.Delete(filename);
+                }
 
                 if (destination != null)
                 {

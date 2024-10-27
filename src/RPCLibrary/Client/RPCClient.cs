@@ -22,8 +22,6 @@ namespace RPCLibrary.Client
 {
     public class RPCClient
     {
-        private const int              __DEFAULT_BUFFER_SIZE = 5120;  // 1024 * n (n=5)
-
         private readonly TcpClient     __tcpClient;
         private BinaryWriter?          __writer = null;
         private BinaryReader?          __reader = null;
@@ -34,7 +32,7 @@ namespace RPCLibrary.Client
 
         private void Init()
         {
-            BufferedStream stream = new BufferedStream(__tcpClient.GetStream(), __DEFAULT_BUFFER_SIZE);
+            var stream = __tcpClient.GetStream();
 
             __writer = new BinaryWriter(stream);
             __reader = new BinaryReader(stream);
