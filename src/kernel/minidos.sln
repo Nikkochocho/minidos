@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RPCLibrary", "..\RPCLibrary
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GPTClient", "..\GPTClient\GPTClient.csproj", "{3249C7F9-1DF3-49C6-88F9-31BD9A0D6B2D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LuaSamples", "..\LuaSamples\LuaSamples.csproj", "{CD97290D-FED8-4FB3-85BF-108DB92DFB6A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,16 @@ Global
 		{3249C7F9-1DF3-49C6-88F9-31BD9A0D6B2D}.Release|x64.Build.0 = Release|Any CPU
 		{3249C7F9-1DF3-49C6-88F9-31BD9A0D6B2D}.Release|x86.ActiveCfg = Release|Any CPU
 		{3249C7F9-1DF3-49C6-88F9-31BD9A0D6B2D}.Release|x86.Build.0 = Release|Any CPU
+		{CD97290D-FED8-4FB3-85BF-108DB92DFB6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD97290D-FED8-4FB3-85BF-108DB92DFB6A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CD97290D-FED8-4FB3-85BF-108DB92DFB6A}.Debug|x64.Build.0 = Debug|Any CPU
+		{CD97290D-FED8-4FB3-85BF-108DB92DFB6A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CD97290D-FED8-4FB3-85BF-108DB92DFB6A}.Debug|x86.Build.0 = Debug|Any CPU
+		{CD97290D-FED8-4FB3-85BF-108DB92DFB6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD97290D-FED8-4FB3-85BF-108DB92DFB6A}.Release|x64.ActiveCfg = Release|Any CPU
+		{CD97290D-FED8-4FB3-85BF-108DB92DFB6A}.Release|x64.Build.0 = Release|Any CPU
+		{CD97290D-FED8-4FB3-85BF-108DB92DFB6A}.Release|x86.ActiveCfg = Release|Any CPU
+		{CD97290D-FED8-4FB3-85BF-108DB92DFB6A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

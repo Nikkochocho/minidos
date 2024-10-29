@@ -1,8 +1,25 @@
-﻿using KeraLua;
+﻿/*
+ * MiniDOS
+ * Copyright (C) 2024  Lara H. Ferreira and others.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+using KeraLua;
 using NetCoreAudio;
 using NLua;
-using RPCLibrary.Client;
-using RPCLibrary.DataProtocol;
+using RPCLibrary.Config;
+using RPCLibrary.RPC;
 using System.Net.Sockets;
 using System.Text;
 
@@ -14,29 +31,26 @@ namespace RPCLibrary
         public const string LUA_EXTENSION = ".lua";
     }
 
-    public record OpenAIParms
-    {
-        public string ApiKey { get; set; }
-        public int MaxTokens { get; set; }
-
-    }
-
     public class LuaEngine
     {
-        private NLua.Lua             __state = new NLua.Lua();
-        private readonly TcpClient   __tcpClient;
-        private readonly OpenAIParms __openAiParms;
-        private bool                 __isScriptRunning = false;
-        private bool                 __enableAutoCarriageReturn = true;
-        private string               __currentPath;
+        private NLua.Lua               __state = new NLua.Lua();
+        private readonly TcpClient     __tcpClient;
+        private readonly RPCClient     __rpcClient;
+        private readonly ServerParms   __parms;
+        private readonly List<Player>  __playerQueue;
+        private bool                   __isScriptRunning = false;
+        private bool                   __enableAutoCarriageReturn = true;
+        private string                 __currentPath;
 
         public string Args { get; set; } = "";
 
 
-        public LuaEngine(TcpClient tcpClient, OpenAIParms openAiParms)
+        public LuaEngine(TcpClient tcpClient, ServerParms parms)
         {
+            __playerQueue = new List<Player>();
+            __rpcClient   = new RPCClient(tcpClient);
             __tcpClient   = tcpClient;
-            __openAiParms = openAiParms;
+            __parms       = parms;
 
             RegisterLuaFunctions();
         }
@@ -53,18 +67,40 @@ namespace RPCLibrary
             return true;
         }
 
+        public void StopScript()
+        {
+            __isScriptRunning = false;
+
+            // Stop audio queue
+            _stopPlayerQueue();
+
+            __state.State.Error("Lua Execution stopped");
+        }
+
         private void SendScreenResponse(string text)
         {
-            RPCClient rpcClient = new RPCClient(__tcpClient);
-            byte[]    buffer    = Encoding.Default.GetBytes(text);
-            RPCData   data      = new RPCData()
+            if(!__tcpClient.Connected)
             {
-                Type = RPCData.TYPE_LUA_SCREEN_RESPONSE,
-                EndOfData = !__isScriptRunning,
-                Data = buffer,
-            };
+                StopScript();
+                return;
+            }
 
-            rpcClient.Send(data);
+            try
+            {
+                byte[] buffer = Encoding.Default.GetBytes(text);
+                RPCData data = new RPCData()
+                {
+                    Type = RPCData.TYPE_LUA_SCREEN_RESPONSE,
+                    EndOfData = !__isScriptRunning,
+                    Data = buffer,
+                };
+
+                __rpcClient.Send(data);
+            }
+            catch (Exception ex)
+            {
+                StopScript();
+            }
         }
 
         private void RegisterLuaFunctions()
@@ -110,6 +146,11 @@ namespace RPCLibrary
                                     typeof(LuaEngine).GetMethod(nameof(LuaEngine._play),
                                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
             __state.DoString(@"play = function(filename) return _play(filename); end");
+            __state.RegisterFunction(nameof(_stopPlayerQueue),
+                                    this,
+                                    typeof(LuaEngine).GetMethod(nameof(LuaEngine._stopPlayerQueue),
+                                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
+            __state.DoString(@"stop_player_queue = function() return _stopPlayerQueue(); end");
             __state.RegisterFunction(nameof(_getCurrentPath),
                                     this,
                                     typeof(LuaEngine).GetMethod(nameof(LuaEngine._getCurrentPath),
@@ -133,7 +174,10 @@ namespace RPCLibrary
             var cr   = (__enableAutoCarriageReturn ? "\n" : "");
             var text = $"{strBuilder.ToString()}{cr}";
 
-            Console.Write(text);
+            if (__parms.ShowScreenContentOnServer)
+            {
+                Console.Write(text);
+            }
 
             SendScreenResponse(text);
         }
@@ -150,13 +194,21 @@ namespace RPCLibrary
 
         private void _clear()
         {
-            Console.Clear();
+            if (__parms.ShowScreenContentOnServer)
+            {
+                Console.Clear();
+            }
+
             SendScreenResponse(RPCData.ANSI_CLEAR_SCREEN_CODE);
         }
 
         private void _home()
         {
-            Console.SetCursorPosition(0, 0);
+            if (__parms.ShowScreenContentOnServer)
+            {
+                Console.SetCursorPosition(0, 0);
+            }
+
             SendScreenResponse(RPCData.ANSI_SET_CURSOR_HOME_POSITION);
         }
 
@@ -167,7 +219,7 @@ namespace RPCLibrary
 
         private string _askGPT(string question)
         {
-            OpenAIClient openAI = new OpenAIClient(__openAiParms.ApiKey, __openAiParms.MaxTokens);
+            OpenAIClient openAI = new OpenAIClient(__parms.ApiKey, __parms.MaxTokens);
 
             return openAI.Ask(question);
         }
@@ -179,6 +231,7 @@ namespace RPCLibrary
             try
             {
                 player.Play(filename).Wait();
+                __playerQueue.Add(player);
 
                 return true;
             }
@@ -186,6 +239,14 @@ namespace RPCLibrary
             {
                 Console.WriteLine(e);
                 return false;
+            }
+        }
+
+        private void _stopPlayerQueue()
+        { 
+            foreach(Player player in __playerQueue)
+            {
+                player?.Stop();
             }
         }
 
