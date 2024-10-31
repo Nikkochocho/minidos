@@ -33,24 +33,28 @@ namespace RPCLibrary
 
     public class LuaEngine
     {
-        private NLua.Lua               __state = new NLua.Lua();
-        private readonly TcpClient     __tcpClient;
-        private readonly RPCClient     __rpcClient;
-        private readonly ServerParms   __parms;
-        private readonly List<Player>  __playerQueue;
-        private bool                   __isScriptRunning = false;
-        private bool                   __enableAutoCarriageReturn = true;
-        private string                 __currentPath;
+        private readonly NLua.Lua          __state;
+        private readonly TcpClient         __tcpClient;
+        private readonly RPCClient         __rpcClient;
+        private readonly RPCScreenHandling __screenHandling;
+        private readonly ServerParms       __parms;
+        private readonly List<Player>      __playerQueue;
+        private bool                       __isScriptRunning = false;
+        private bool                       __enableLowLatencyScreenResponse = false;
+        private bool                       __enableAutoCarriageReturn = true;
+        private string                     __currentPath;
 
         public string Args { get; set; } = "";
 
 
         public LuaEngine(TcpClient tcpClient, ServerParms parms)
         {
-            __playerQueue = new List<Player>();
-            __rpcClient   = new RPCClient(tcpClient);
-            __tcpClient   = tcpClient;
-            __parms       = parms;
+            __state          = new NLua.Lua();
+            __playerQueue    = new List<Player>();
+            __rpcClient      = new RPCClient(tcpClient);
+            __screenHandling = new RPCScreenHandling(__rpcClient);
+            __tcpClient      = tcpClient;
+            __parms          = parms;
 
             RegisterLuaFunctions();
         }
@@ -60,7 +64,6 @@ namespace RPCLibrary
 
             __isScriptRunning = true;
             __currentPath     = $"{Path.GetDirectoryName(fileName)}{Path.DirectorySeparatorChar}";
-
             __state.DoFile(fileName);
             __isScriptRunning = false;
 
@@ -74,10 +77,13 @@ namespace RPCLibrary
             // Stop audio queue
             _stopPlayerQueue();
 
+            // Stop low latency screen handling
+            _enableLowLatencyScreenResponse(false);
+
             __state.State.Error("Lua Execution stopped");
         }
 
-        private void SendScreenResponse(string text)
+        private void SendScreenResponse(string text, bool isAnsiCmd = false)
         {
             if(!__tcpClient.Connected)
             {
@@ -90,12 +96,12 @@ namespace RPCLibrary
                 byte[] buffer = Encoding.Default.GetBytes(text);
                 RPCData data = new RPCData()
                 {
-                    Type = RPCData.TYPE_LUA_SCREEN_RESPONSE,
+                    Type = (!isAnsiCmd ? RPCData.TYPE_LUA_SCREEN_RESPONSE : RPCData.TYPE_LUA_ANSI_COMMAND_RESPONSE),
                     EndOfData = !__isScriptRunning,
                     Data = buffer,
                 };
 
-                __rpcClient.Send(data);
+                __screenHandling.Send(data);
             }
             catch (Exception ex)
             {
@@ -121,6 +127,11 @@ namespace RPCLibrary
                         typeof(LuaEngine).GetMethod(nameof(LuaEngine._enableAutoCarriageReturn),
                         System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
             __state.DoString(@"enable_auto_carriage_return = function(enable) _enableAutoCarriageReturn(enable); end");
+            __state.RegisterFunction(nameof(_enableLowLatencyScreenResponse),
+                        this,
+                        typeof(LuaEngine).GetMethod(nameof(LuaEngine._enableLowLatencyScreenResponse),
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
+            __state.DoString(@"enable_low_latency_screen_response = function(enable) _enableLowLatencyScreenResponse(enable); end");
             __state.RegisterFunction(nameof(_clear),
                                     this,
                                     typeof(LuaEngine).GetMethod(nameof(LuaEngine._clear),
@@ -192,6 +203,18 @@ namespace RPCLibrary
             __enableAutoCarriageReturn = enable;
         }
 
+        private void _enableLowLatencyScreenResponse(bool enable)
+        {
+            if (enable)
+            {
+                __enableLowLatencyScreenResponse = (!__screenHandling.IsRunning ? __screenHandling.Start() : true);
+            }
+            else
+            {
+                __enableLowLatencyScreenResponse = (__screenHandling.IsRunning ? __screenHandling.Stop() : false);
+            }
+        }
+
         private void _clear()
         {
             if (__parms.ShowScreenContentOnServer)
@@ -199,7 +222,7 @@ namespace RPCLibrary
                 Console.Clear();
             }
 
-            SendScreenResponse(RPCData.ANSI_CLEAR_SCREEN_CODE);
+            SendScreenResponse(RPCData.ANSI_CLEAR_SCREEN_CODE, true);
         }
 
         private void _home()
@@ -209,7 +232,7 @@ namespace RPCLibrary
                 Console.SetCursorPosition(0, 0);
             }
 
-            SendScreenResponse(RPCData.ANSI_SET_CURSOR_HOME_POSITION);
+            SendScreenResponse(RPCData.ANSI_SET_CURSOR_HOME_POSITION, true);
         }
 
         private string _getArgs()

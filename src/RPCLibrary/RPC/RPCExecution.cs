@@ -15,17 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using RPCLibrary.Array;
+using RPCLibrary.Compression;
+using System;
 using System.Text;
 
 namespace RPCLibrary.RPC
 {
     public class RPCExecution
     {
-        private readonly RPCClient __client;
+        private readonly RPCClient      __client;
+        private char[]                  __screenBuffer;
+        private RPCExecutionInterface?  __execution = null;
+
+
+        public RPCExecutionInterface MemoryInterface { get; set; }
 
         public RPCExecution()
         {
-            __client = new RPCClient();
+            __client       = new RPCClient();
+            __screenBuffer = new char[BitCompression.DEFAULT_UNCOMPRESSED_DATA];
         }
 
         public bool Execute(string filepath, string host, int port, string? cmdLineArgs)
@@ -120,7 +129,7 @@ namespace RPCLibrary.RPC
                     {
                         // Clean unused extra byte array
                         data.DataSize = bytesRead;
-                        Array.Copy(buffer, data.Data, bytesRead);
+                        System.Array.Copy(buffer, data.Data, bytesRead);
                     }
 
                     ret = __client.Send(data);
@@ -130,6 +139,8 @@ namespace RPCLibrary.RPC
                         Console.WriteLine("Error to send data");
                         break;
                     }
+
+                    __execution?.NOP();
                 }
 
                 fs?.Close();
@@ -153,10 +164,43 @@ namespace RPCLibrary.RPC
             {
                 switch (data.Type)
                 {
+                    case RPCData.TYPE_LUA_ANSI_COMMAND_RESPONSE:
                     case RPCData.TYPE_LUA_SCREEN_RESPONSE:
-                        string strData = Encoding.Default.GetString(data.Data);
+                        {
+                            System.Array.Clear(__screenBuffer);
+                            ArrayHelper.Convert(data.Data, ref __screenBuffer);
+                            ScreenResponseHandling(__screenBuffer);
+                        }
+                        break;
 
-                        ScreenResponseHandling(strData);
+                    case RPCData.TYPE_LUA_SCREEN_LOW_LATENCY_RESPONSE:
+                        {
+                            MemoryStream stream = new MemoryStream(data.Data);
+                            BinaryReader reader = new BinaryReader(stream);
+
+                            while(stream.Position < stream.Length)
+                            {
+                                if (__client.Recv(reader, out RPCData screenData))
+                                {
+                                    switch(screenData.Type)
+                                    {
+                                        case RPCData.TYPE_LUA_SCREEN_RESPONSE:
+                                            BitCompression.UnCompress(screenData.Data, __screenBuffer);
+                                            break;
+
+                                        case RPCData.TYPE_LUA_ANSI_COMMAND_RESPONSE:
+                                            ArrayHelper.Convert(screenData.Data, ref __screenBuffer);
+                                            break;
+                                    }
+
+                                    ScreenResponseHandling(__screenBuffer, true);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Error reading low latency screen data");
+                                }
+                            }
+                        }
                         break;
                 }
 
@@ -167,23 +211,30 @@ namespace RPCLibrary.RPC
             }
         }
 
-        private void ScreenResponseHandling(string data)
+        private void ScreenResponseHandling(char[] data, bool newLine = false)
         {
-            switch (data) // Handle ANSI escape commands
-
+            if (ArrayHelper.Contains(data, RPCData.ANSI_CLEAR_SCREEN_CODE_ARRAY))
             {
-                case RPCData.ANSI_CLEAR_SCREEN_CODE:
-                    Console.Clear();
-                    break;
-
-                case RPCData.ANSI_SET_CURSOR_HOME_POSITION:
-                    Console.SetCursorPosition(0, 0);
-                    break;
-
-                default:
-                    Console.Write(data);
-                    break;
+                Console.Clear();
+                return;
             }
+
+            if (ArrayHelper.Contains(data, RPCData.ANSI_SET_CURSOR_HOME_POSITION_ARRAY))
+            {
+                Console.SetCursorPosition(0, 0);
+                return;
+            }
+
+            if (newLine)
+            {
+                Console.WriteLine(data);
+            }
+            else
+            {
+                Console.Write(data);
+            }
+
+            __execution?.NOP();
         }
     }
 }

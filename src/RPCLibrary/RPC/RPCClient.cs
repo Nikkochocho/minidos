@@ -22,11 +22,14 @@ namespace RPCLibrary.RPC
     public class RPCClient
     {
         private readonly TcpClient __tcpClient;
-        private BinaryWriter? __writer = null;
-        private BinaryReader? __reader = null;
+        private readonly RPCData   __data   = new RPCData();
+        private BinaryWriter?      __writer = null;
+        private BinaryReader?      __reader = null;
 
 
         public bool EnableAllExceptions { get; set; } = false;
+
+        public RPCData Data { get; }
 
 
         private void Init()
@@ -74,20 +77,21 @@ namespace RPCLibrary.RPC
 
             return false;
         }
-        public bool Send(RPCData data)
+
+        public bool Send(BinaryWriter? writer, RPCData data)
         {
             if (__tcpClient.Connected)
             {
                 try
                 {
-                    __writer.Write(data.Type);
-                    __writer.Write(data.EndOfData);
-                    __writer.Write(data.IsZipped);
-                    __writer.Write(data.DataSize);
+                    writer.Write(data.Type);
+                    writer.Write(data.EndOfData);
+                    writer.Write(data.IsZipped);
+                    writer.Write(data.DataSize);
 
                     if (data.Data != null)
                     {
-                        __writer.Write(data.Data);
+                        writer.Write(data.Data);
                     }
                     return true;
                 }
@@ -100,16 +104,21 @@ namespace RPCLibrary.RPC
             return false;
         }
 
+        public bool Send(RPCData data)
+        {
+            return Send(__writer, data);
+        }
+
         public bool Recv(BinaryReader? reader, out RPCData data)
         {
             try
             {
-                data = new RPCData();
+                data = __data;
 
-                data.Type = reader.ReadInt32();
+                data.Type      = reader.ReadInt32();
                 data.EndOfData = reader.ReadBoolean();
-                data.IsZipped = reader.ReadBoolean();
-                data.DataSize = reader.ReadInt32();
+                data.IsZipped  = reader.ReadBoolean();
+                data.DataSize  = reader.ReadInt32();
 
                 if (data.DataSize > 0)
                 {

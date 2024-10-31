@@ -59,6 +59,8 @@ end
 
 
 -- Main program
+
 --play(get_current_path().."bad_apple.wav")
+enable_low_latency_screen_response(true)
 play_decoder(frames)
 clear();

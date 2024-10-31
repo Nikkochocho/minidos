@@ -12,8 +12,4 @@
     <PackageReference Include="NLua" Version="1.7.3" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="DataProtocol\" />
-  </ItemGroup>
-
 </Project>

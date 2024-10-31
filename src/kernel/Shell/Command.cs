@@ -25,11 +25,14 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using RPCLibrary.RPC;
+using Cosmos.Core.Memory;
+using Cosmos.Core;
+using System.Threading;
 
 
 namespace MiniDOS.Shell
 {
-    public class Command
+    public class Command : RPCExecutionInterface
     {
         private static string __YEAR = "2024";
         private static string __VERSION = "0.1";
@@ -345,6 +348,8 @@ namespace MiniDOS.Shell
                                 var hostname = aHostPort[0];
                                 var port = int.Parse(aHostPort[1]);
 
+                                exec.MemoryInterface = this;
+
                                 if (exec.Execute(absFileNamePath, hostname, port, cmdLineParms))
                                 {
                                     Console.WriteLine("Execution sucessfull");
@@ -399,6 +404,11 @@ namespace MiniDOS.Shell
                 }
             }
             return false;
+        }
+
+        void RPCExecutionInterface.NOP()
+        {
+            //Heap.Collect();
         }
     }
 }
