@@ -15,14 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using RPCLibrary.Compression;
 using System.Net.Sockets;
 
 namespace RPCLibrary.RPC
 {
     public class RPCClient
     {
+        private const int          __DEFAULT_BUFFER_SIZE = 1024;
+
         private readonly TcpClient __tcpClient;
-        private readonly RPCData   __data   = new RPCData();
+        private readonly RPCData   __data   = new RPCData(true);
+        private readonly byte[]    __buffer = new byte[__DEFAULT_BUFFER_SIZE];
         private BinaryWriter?      __writer = null;
         private BinaryReader?      __reader = null;
 
@@ -78,24 +82,80 @@ namespace RPCLibrary.RPC
             return false;
         }
 
-        public bool Send(BinaryWriter? writer, RPCData data)
+        public bool Serialize(BinaryWriter? writer, RPCData data)
         {
-            if (__tcpClient.Connected)
+            try
             {
-                try
-                {
-                    writer.Write(data.Type);
-                    writer.Write(data.EndOfData);
-                    writer.Write(data.IsZipped);
-                    writer.Write(data.DataSize);
+                writer.Write(data.Type);
+                writer.Write(data.EndOfData);
+                writer.Write(data.IsZipped);
+                writer.Write(data.DataSize);
 
-                    if (data.Data != null)
-                    {
-                        writer.Write(data.Data);
-                    }
-                    return true;
+                if (data.Data != null)
+                {
+                    writer.Write(data.Data);
                 }
-                catch (Exception ex)
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            return false;
+        }
+
+        public bool Send(RPCData data)
+        {
+            return Serialize(__writer, data);
+        }
+
+        public bool Deserialize(Stream stream, out RPCData data)
+        {
+            try
+            {
+                int   size;
+
+                data      = __data;
+                data.Data = __buffer;
+
+                size = sizeof(int);
+                if (stream.Read(__buffer, 0, size) != size)
+                    return false;
+
+                data.Type = BitConverter.ToInt32(__buffer, 0);
+
+                size = sizeof(bool);
+                if (stream.Read(__buffer, 0, size) != size)
+                    return false;
+
+                data.EndOfData = BitConverter.ToBoolean(__buffer, 0);
+
+                size = sizeof(bool);
+                if (stream.Read(__buffer, 0, size) != size)
+                    return false;
+
+                data.IsZipped = BitConverter.ToBoolean(__buffer, 0);
+
+                size = sizeof(int);
+                if (stream.Read(__buffer, 0, size) != size)
+                    return false;
+
+                data.DataSize = BitConverter.ToInt32(__buffer, 0);
+
+                if (data.DataSize > 0)
+                {
+                    if (stream.Read(__buffer, 0, data.DataSize) != data.DataSize)
+                        return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                data = default;
+
+                if (ex.GetType() != typeof(EndOfStreamException) && EnableAllExceptions)
                 {
                     Console.WriteLine(ex.Message);
                 }
@@ -104,12 +164,7 @@ namespace RPCLibrary.RPC
             return false;
         }
 
-        public bool Send(RPCData data)
-        {
-            return Send(__writer, data);
-        }
-
-        public bool Recv(BinaryReader? reader, out RPCData data)
+        public bool Deserialize(BinaryReader? reader, out RPCData data)
         {
             try
             {
@@ -142,7 +197,7 @@ namespace RPCLibrary.RPC
 
         public bool Recv(out RPCData data)
         {
-            return Recv(__reader, out data);
+            return Deserialize(__reader, out data);
         }
     }
 }

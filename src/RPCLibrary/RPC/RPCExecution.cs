@@ -17,7 +17,6 @@
 
 using RPCLibrary.Array;
 using RPCLibrary.Compression;
-using System;
 using System.Text;
 
 namespace RPCLibrary.RPC
@@ -26,10 +25,6 @@ namespace RPCLibrary.RPC
     {
         private readonly RPCClient      __client;
         private char[]                  __screenBuffer;
-        private RPCExecutionInterface?  __execution = null;
-
-
-        public RPCExecutionInterface MemoryInterface { get; set; }
 
         public RPCExecution()
         {
@@ -139,8 +134,6 @@ namespace RPCLibrary.RPC
                         Console.WriteLine("Error to send data");
                         break;
                     }
-
-                    __execution?.NOP();
                 }
 
                 fs?.Close();
@@ -176,16 +169,15 @@ namespace RPCLibrary.RPC
                     case RPCData.TYPE_LUA_SCREEN_LOW_LATENCY_RESPONSE:
                         {
                             MemoryStream stream = new MemoryStream(data.Data);
-                            BinaryReader reader = new BinaryReader(stream);
 
                             while(stream.Position < stream.Length)
                             {
-                                if (__client.Recv(reader, out RPCData screenData))
+                                if (__client.Deserialize(stream, out RPCData screenData))
                                 {
                                     switch(screenData.Type)
                                     {
                                         case RPCData.TYPE_LUA_SCREEN_RESPONSE:
-                                            BitCompression.UnCompress(screenData.Data, __screenBuffer);
+                                            BitCompression.UnCompress(screenData.Data, __screenBuffer, screenData.DataSize);
                                             break;
 
                                         case RPCData.TYPE_LUA_ANSI_COMMAND_RESPONSE:
@@ -233,8 +225,6 @@ namespace RPCLibrary.RPC
             {
                 Console.Write(data);
             }
-
-            __execution?.NOP();
         }
     }
 }

@@ -19,8 +19,8 @@ namespace RPCLibrary.Compression
 {
     public class BitCompression
     {
-        private const char __TURN_ON_PIXEL  = 'x';
-        private const char __TURN_OFF_PIXEL = ' ';
+        private const char __TURN_ON_PIXEL  = ' ';
+        private const char __TURN_OFF_PIXEL = 'x';
 
         public const int DEFAULT_UNCOMPRESSED_DATA = 5120;
 
@@ -88,13 +88,13 @@ namespace RPCLibrary.Compression
             return line;
         }
 
-        public static void UnCompress(byte[] aCompressed, char[] aUncompressed)
+        public static void UnCompress(byte[] aCompressed, char[] aUncompressed, int aCompressedSize)
         {
-            int count = 0;
+            int ucount = 0;
 
-            foreach (byte b in aCompressed)
+            for(int count = 0; count < aCompressedSize; count++)
             {
-                byte packedFrame = b;
+                byte packedFrame = aCompressed[count];
 
                 for (int i = 0; i < 8; i++)
                 {
@@ -104,11 +104,11 @@ namespace RPCLibrary.Compression
 
                     if (bit == 1)
                     {
-                        aUncompressed[count++] = __TURN_ON_PIXEL;
+                        aUncompressed[ucount++] = __TURN_ON_PIXEL;
                     }
                     else
                     {
-                        aUncompressed[count++] = __TURN_OFF_PIXEL;
+                        aUncompressed[ucount++] = __TURN_OFF_PIXEL;
                     }
                 }
             }

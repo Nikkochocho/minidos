@@ -61,7 +61,7 @@ namespace RPCLibrary.RPC
                             data.Data = compressedData;
                         }
 
-                        __rpcClient.Send(writer, data);
+                        __rpcClient.Serialize(writer, data);
 
                         if (stream.Length >= __SCREEN_BUFFER_SIZE)
                         {

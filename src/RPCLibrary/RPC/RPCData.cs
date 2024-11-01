@@ -38,6 +38,9 @@ namespace RPCLibrary.RPC
         public const int TYPE_LUA_ANSI_COMMAND_RESPONSE          = 4;
         public const int TYPE_LUA_SCREEN_LOW_LATENCY_RESPONSE    = 5;
 
+        private bool __noAlloc = false;
+        private int __dataSize = 0;
+
         public int Type { get; set; }
         public bool EndOfData { get; set; }
         public bool IsZipped { get; set; }
@@ -46,12 +49,31 @@ namespace RPCLibrary.RPC
         {
             get
             {
-                return Data != null ? Data.Length : 0;
+                if (!__noAlloc)
+                {
+                    return Data != null ? Data.Length : 0;
+                }
+                else
+                {
+                    return __dataSize;
+                }
             }
             set
             {
-                Data = new byte[value];
+                if (!__noAlloc)
+                {
+                    Data = new byte[value];
+                }
+                else
+                {
+                    __dataSize = value;
+                }
             }
+        }
+
+        public RPCData(bool noAlloc = false)
+        {
+            __noAlloc = noAlloc;
         }
     }
 }
