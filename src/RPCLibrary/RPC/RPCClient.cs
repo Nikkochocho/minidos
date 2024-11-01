@@ -33,7 +33,15 @@ namespace RPCLibrary.RPC
 
         public bool EnableAllExceptions { get; set; } = false;
 
-        public RPCData Data { get; }
+        public RPCData Data
+        {
+            get
+            {
+                __data.Data = __data.Data ?? __buffer;
+
+                return __data;
+            }
+        }
 
 
         private void Init()
@@ -198,6 +206,11 @@ namespace RPCLibrary.RPC
         public bool Recv(out RPCData data)
         {
             return Deserialize(__reader, out data);
+        }
+
+        public bool RecvFromStream(ref RPCData data)
+        {
+            return Deserialize(__tcpClient.GetStream(), out data);
         }
     }
 }

@@ -152,8 +152,10 @@ namespace RPCLibrary.RPC
 
         private void ReceiveLuaScreenResponse()
         {
+            RPCData      data = __client.Data;
+
             // Receive and process Lua script responses
-            while (__client.Recv(out RPCData data))
+            while (__client.RecvFromStream(ref data))
             {
                 switch (data.Type)
                 {
@@ -168,15 +170,16 @@ namespace RPCLibrary.RPC
 
                     case RPCData.TYPE_LUA_SCREEN_LOW_LATENCY_RESPONSE:
                         {
-                            MemoryStream stream = new MemoryStream(data.Data);
+                            MemoryStream stream = new MemoryStream(data.Data, 0, data.DataSize);
 
-                            while(stream.Position < stream.Length)
+                            while (stream.Position < stream.Length)
                             {
                                 if (__client.Deserialize(stream, out RPCData screenData))
                                 {
                                     switch(screenData.Type)
                                     {
                                         case RPCData.TYPE_LUA_SCREEN_RESPONSE:
+                                            System.Array.Clear(__screenBuffer);
                                             BitCompression.UnCompress(screenData.Data, __screenBuffer, screenData.DataSize);
                                             break;
 
@@ -192,6 +195,10 @@ namespace RPCLibrary.RPC
                                     Console.WriteLine("Error reading low latency screen data");
                                 }
                             }
+
+                            // Reset Stream and Writer
+                            stream.Position = 0;
+                            stream.SetLength(0);
                         }
                         break;
                 }
