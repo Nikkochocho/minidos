@@ -18,8 +18,8 @@
 local __MAX_ROWS   = 30
 local __MAX_COLS   = 79
 local __FREQ_SLEEP = 23
-local __COL_RATIO  = 2
-local __ROW_RATIO  = 2
+local __COL_RATIO  = 1
+local __ROW_RATIO  = 1
 
 local base_path = string.match(get_current_path(), '^(.-)[^/\\]*$')
 package.path = string.format("%s;%s?.lua", package.path, base_path)

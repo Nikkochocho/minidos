@@ -25,7 +25,7 @@ namespace RPCLibrary.RPC
     public class RPCScreenHandling
     {
         private const int                    __TIME_WAIT_CHECK_QUEUE = 0;
-        private const int                    __TIME_WAIT_SEND        = 100;
+        private const int                    __TIME_WAIT_SEND        = 50;
 
         private readonly RPCClient           __rpcClient;
         private bool                         __isRunning       = false;
