@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using RPCLibrary.Array;
 using RPCLibrary.Compression;
 using System.Collections.Concurrent;
 using System.Text;
@@ -24,8 +25,7 @@ namespace RPCLibrary.RPC
     public class RPCScreenHandling
     {
         private const int                    __TIME_WAIT_CHECK_QUEUE = 0;
-        private const int                    __SCREEN_BUFFER_SIZE    = 512;
-        private const int                    __TIME_WAIT_SEND        = 10;
+        private const int                    __TIME_WAIT_SEND        = 100;
 
         private readonly RPCClient           __rpcClient;
         private bool                         __isRunning       = false;
@@ -40,7 +40,7 @@ namespace RPCLibrary.RPC
         {
             _ = Task.Factory.StartNew(() =>
             {
-                MemoryStream   stream     = new MemoryStream();
+                MemoryStream   stream     = new MemoryStream(RPCData.SCREEN_BUFFER_SIZE*2);
                 BinaryWriter   writer     = new BinaryWriter(stream);
                 RPCData        bufferData = new RPCData()
                 {
@@ -48,7 +48,6 @@ namespace RPCLibrary.RPC
                     IsZipped  = false,
                     EndOfData = false,
                 };
-
 
                 while (__isRunning)
                 {
@@ -63,7 +62,7 @@ namespace RPCLibrary.RPC
 
                         __rpcClient.Serialize(writer, data);
 
-                        if (stream.Length >= __SCREEN_BUFFER_SIZE)
+                        if (stream.Length >= RPCData.SCREEN_BUFFER_SIZE)
                         {
                             bufferData.DataSize = (int) stream.Length;
                             System.Array.Copy(stream.GetBuffer(), bufferData.Data, bufferData.DataSize);
@@ -76,6 +75,7 @@ namespace RPCLibrary.RPC
                             writer.Seek(0, SeekOrigin.Begin);
 
                             Thread.Sleep(__TIME_WAIT_SEND);
+                            //Thread.Sleep(1000);
                         }
                     }
                 }

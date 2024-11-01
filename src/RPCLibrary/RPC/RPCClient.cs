@@ -90,6 +90,11 @@ namespace RPCLibrary.RPC
             return false;
         }
 
+        public bool Send(RPCData data)
+        {
+            return Serialize(__writer, data);
+        }
+
         public bool Serialize(BinaryWriter? writer, RPCData data)
         {
             try
@@ -113,11 +118,6 @@ namespace RPCLibrary.RPC
             return false;
         }
 
-        public bool Send(RPCData data)
-        {
-            return Serialize(__writer, data);
-        }
-
         public bool Deserialize(Stream stream, out RPCData data)
         {
             try
@@ -127,30 +127,35 @@ namespace RPCLibrary.RPC
                 data      = __data;
                 data.Data = __buffer;
 
+                // Type
                 size = sizeof(int);
                 if (stream.Read(__buffer, 0, size) != size)
                     return false;
 
                 data.Type = BitConverter.ToInt32(__buffer, 0);
 
+                // EndOfData
                 size = sizeof(bool);
                 if (stream.Read(__buffer, 0, size) != size)
                     return false;
 
                 data.EndOfData = BitConverter.ToBoolean(__buffer, 0);
 
+                // IsZipped
                 size = sizeof(bool);
                 if (stream.Read(__buffer, 0, size) != size)
                     return false;
 
                 data.IsZipped = BitConverter.ToBoolean(__buffer, 0);
 
+                // DataSize
                 size = sizeof(int);
                 if (stream.Read(__buffer, 0, size) != size)
                     return false;
 
                 data.DataSize = BitConverter.ToInt32(__buffer, 0);
 
+                // Data
                 if (data.DataSize > 0)
                 {
                     if (stream.Read(__buffer, 0, data.DataSize) != data.DataSize)

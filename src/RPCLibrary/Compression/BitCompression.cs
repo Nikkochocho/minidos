@@ -22,8 +22,6 @@ namespace RPCLibrary.Compression
         private const char __TURN_ON_PIXEL  = ' ';
         private const char __TURN_OFF_PIXEL = 'x';
 
-        public const int DEFAULT_UNCOMPRESSED_DATA = 5120;
-
         public static byte[] Compress(char[] aData)
         {
             int    bitCount = 0;

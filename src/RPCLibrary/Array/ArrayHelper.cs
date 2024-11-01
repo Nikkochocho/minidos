@@ -34,13 +34,13 @@ namespace RPCLibrary.Array
 
             return true;
         }
-        public static void Convert(byte[] aSource, ref char[] dest)
+        public static void Convert(byte[] aSource, ref char[] dest, int sourceSize = 0)
         {
-            int count = 0;
+            int boundary = (sourceSize == 0 ? aSource.Length : sourceSize);
 
-            foreach (byte b in aSource)
+            for(int count = 0; count < boundary; count++)
             {
-                dest[count++] = System.Convert.ToChar(b);
+                dest[count] = System.Convert.ToChar(aSource[count]);
             }
         }
     }

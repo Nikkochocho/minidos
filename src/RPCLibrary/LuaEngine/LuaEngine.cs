@@ -96,9 +96,10 @@ namespace RPCLibrary
                 byte[] buffer = Encoding.Default.GetBytes(text);
                 RPCData data = new RPCData()
                 {
-                    Type = (!isAnsiCmd ? RPCData.TYPE_LUA_SCREEN_RESPONSE : RPCData.TYPE_LUA_ANSI_COMMAND_RESPONSE),
+                    Type      = (!isAnsiCmd ? RPCData.TYPE_LUA_SCREEN_RESPONSE : RPCData.TYPE_LUA_ANSI_COMMAND_RESPONSE),
                     EndOfData = !__isScriptRunning,
-                    Data = buffer,
+                    IsZipped  = false,
+                    Data      = buffer,
                 };
 
                 __screenHandling.Send(data);
