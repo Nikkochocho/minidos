@@ -88,11 +88,12 @@ namespace RPCLibrary.Compression
             return line;
         }
 
-        public static void UnCompress(byte[] aCompressed, char[] aUncompressed, int aCompressedSize)
+        public static void UnCompress(byte[] aCompressed, char[] aUncompressed, int aCompressedSize = 0)
         {
-            int ucount = 0;
+            int ucount   = 0;
+            int boundary = (aCompressedSize == 0 ? aCompressed.Length : aCompressedSize);
 
-            for(int count = 0; count < aCompressedSize; count++)
+            for(int count = 0; count < boundary; count++)
             {
                 byte packedFrame = aCompressed[count];
 
