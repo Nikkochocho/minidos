@@ -21,22 +21,29 @@ namespace RPCLibrary.RPC
 {
     public class RPCClient
     {
-        private const int          __DEFAULT_BUFFER_SIZE = 1024;
-
         private readonly TcpClient __tcpClient;
-        private readonly RPCData   __data   = new RPCData(true);
-        private readonly byte[]    __buffer = new byte[__DEFAULT_BUFFER_SIZE];
-        private BinaryWriter?      __writer = null;
-        private BinaryReader?      __reader = null;
+        private readonly RPCData   __data     = new RPCData(true);
+        private readonly byte[]    __bufferIn = new byte[BufferSize];
+        private BinaryWriter?      __writer   = null;
+        private BinaryReader?      __reader   = null;
 
 
         public bool EnableAllExceptions { get; set; } = false;
+
+        public static int BufferSize
+        {
+            get
+            {
+                // Extra bytes (for safety data transfer screen operations)
+                return (RPCData.SCREEN_BUFFER_SIZE + 512);
+            }
+        }
 
         public RPCData Data
         {
             get
             {
-                __data.Data = __data.Data ?? __buffer;
+                __data.Data = __data.Data ?? __bufferIn;
 
                 return __data;
             }
@@ -124,40 +131,40 @@ namespace RPCLibrary.RPC
                 int   size;
 
                 data      = __data;
-                data.Data = __buffer;
+                data.Data = __bufferIn;
 
                 // Type
                 size = sizeof(int);
-                if (stream.Read(__buffer, 0, size) != size)
+                if (stream.Read(__bufferIn, 0, size) != size)
                     return false;
 
-                data.Type = BitConverter.ToInt32(__buffer, 0);
+                data.Type = BitConverter.ToInt32(__bufferIn, 0);
 
                 // EndOfData
                 size = sizeof(bool);
-                if (stream.Read(__buffer, 0, size) != size)
+                if (stream.Read(__bufferIn, 0, size) != size)
                     return false;
 
-                data.EndOfData = BitConverter.ToBoolean(__buffer, 0);
+                data.EndOfData = BitConverter.ToBoolean(__bufferIn, 0);
 
                 // IsZipped
                 size = sizeof(bool);
-                if (stream.Read(__buffer, 0, size) != size)
+                if (stream.Read(__bufferIn, 0, size) != size)
                     return false;
 
-                data.IsZipped = BitConverter.ToBoolean(__buffer, 0);
+                data.IsZipped = BitConverter.ToBoolean(__bufferIn, 0);
 
                 // DataSize
                 size = sizeof(int);
-                if (stream.Read(__buffer, 0, size) != size)
+                if (stream.Read(__bufferIn, 0, size) != size)
                     return false;
 
-                data.DataSize = BitConverter.ToInt32(__buffer, 0);
+                data.DataSize = BitConverter.ToInt32(__bufferIn, 0);
 
                 // Data
                 if (data.DataSize > 0)
                 {
-                    if (stream.Read(__buffer, 0, data.DataSize) != data.DataSize)
+                    if (stream.Read(__bufferIn, 0, data.DataSize) != data.DataSize)
                         return false;
                 }
 

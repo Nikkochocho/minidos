@@ -22,7 +22,7 @@ using System.Text;
 
 namespace RPCLibrary.RPC
 {
-    public class RPCScreenHandling
+    public class RPCScreenCompression
     {
         private const int                    __TIME_WAIT_CHECK_QUEUE = 0;
         private const int                    __TIME_WAIT_SEND        = 50;
@@ -75,14 +75,13 @@ namespace RPCLibrary.RPC
                             writer.Seek(0, SeekOrigin.Begin);
 
                             Thread.Sleep(__TIME_WAIT_SEND);
-                            //Thread.Sleep(1000);
                         }
                     }
                 }
             });
         }
 
-        public RPCScreenHandling(RPCClient rpcClient)
+        public RPCScreenCompression(RPCClient rpcClient)
         {
             __rpcClient = rpcClient;
         }

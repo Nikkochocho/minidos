@@ -30,7 +30,7 @@ namespace RPCLibrary.RPC
         public const string SERVER_SHARED_FILE_PROTOCOL          = "share://";
 
         public const int DEFAULT_BLOCK_SIZE                      = 512;
-        public const int SCREEN_BUFFER_SIZE                      = 512;
+        public const int SCREEN_BUFFER_SIZE                      = 5120;
 
         public const int TYPE_LUA_FILENAME                       = 0;
         public const int TYPE_LUA_PARMS                          = 1;

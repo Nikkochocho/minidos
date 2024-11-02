@@ -98,6 +98,6 @@ end
 
 --play(get_current_path().."bad_apple.wav")
 --enable_auto_carriage_return(false)
-enable_low_latency_screen_response(true)
+enable_screen_compression(true)
 play_decoder(frames)
 clear();

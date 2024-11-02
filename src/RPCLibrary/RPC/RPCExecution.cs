@@ -30,7 +30,7 @@ namespace RPCLibrary.RPC
         public RPCExecution()
         {
             __client       = new RPCClient();
-            __screenBuffer = new char[RPCData.SCREEN_BUFFER_SIZE*2];
+            __screenBuffer = new char[RPCClient.BufferSize];
         }
 
         public bool Execute(string filepath, string host, int port, string? cmdLineArgs)
@@ -161,13 +161,14 @@ namespace RPCLibrary.RPC
             {
                 int dataSize = data.DataSize;
 
+                System.Array.Clear(__screenBuffer);
+
                 switch (data.Type)
                 {
                     case RPCData.TYPE_LUA_ANSI_COMMAND_RESPONSE:
                     case RPCData.TYPE_LUA_SCREEN_RESPONSE:
                         {
-                            System.Array.Clear(__screenBuffer);
-                            ArrayHelper.Convert(data.Data, ref __screenBuffer);
+                            ArrayHelper.Convert(data.Data, ref __screenBuffer, data.DataSize);
                             ScreenResponseHandling(__screenBuffer);
                         }
                         break;
@@ -180,19 +181,17 @@ namespace RPCLibrary.RPC
                             {
                                 if (__client.Deserialize(stream, out RPCData screenData))
                                 {
-                                    switch(screenData.Type)
+                                    switch (screenData.Type)
                                     {
                                         case RPCData.TYPE_LUA_SCREEN_RESPONSE:
-                                            System.Array.Clear(__screenBuffer);
                                             BitCompression.UnCompress(screenData.Data, __screenBuffer, screenData.DataSize);
                                             break;
 
                                         case RPCData.TYPE_LUA_ANSI_COMMAND_RESPONSE:
-                                            System.Array.Clear(__screenBuffer);
                                             ArrayHelper.Convert(screenData.Data, ref __screenBuffer, screenData.DataSize);
                                             break;
                                         default:
-                                            Console.WriteLine("Unknown command");
+                                            Console.WriteLine("Unknown command (low latency response)");
                                             break;
                                     }
 
@@ -204,6 +203,10 @@ namespace RPCLibrary.RPC
                                 }
                             }
                         }
+                        break;
+
+                    default:
+                        Console.WriteLine("Unknown command");
                         break;
                 }
 

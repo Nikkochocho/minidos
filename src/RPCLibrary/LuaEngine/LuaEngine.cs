@@ -33,28 +33,28 @@ namespace RPCLibrary
 
     public class LuaEngine
     {
-        private readonly NLua.Lua          __state;
-        private readonly TcpClient         __tcpClient;
-        private readonly RPCClient         __rpcClient;
-        private readonly RPCScreenHandling __screenHandling;
-        private readonly ServerParms       __parms;
-        private readonly List<Player>      __playerQueue;
-        private bool                       __isScriptRunning = false;
-        private bool                       __enableLowLatencyScreenResponse = false;
-        private bool                       __enableAutoCarriageReturn = true;
-        private string                     __currentPath;
+        private readonly NLua.Lua             __state;
+        private readonly TcpClient            __tcpClient;
+        private readonly RPCClient            __rpcClient;
+        private readonly RPCScreenCompression __screenCompression;
+        private readonly ServerParms          __parms;
+        private readonly List<Player>         __playerQueue;
+        private bool                          __isScriptRunning = false;
+        private bool                          __enableScreenCompression  = false;
+        private bool                          __enableAutoCarriageReturn = true;
+        private string                        __currentPath;
 
         public string Args { get; set; } = "";
 
 
         public LuaEngine(TcpClient tcpClient, ServerParms parms)
         {
-            __state          = new NLua.Lua();
-            __playerQueue    = new List<Player>();
-            __rpcClient      = new RPCClient(tcpClient);
-            __screenHandling = new RPCScreenHandling(__rpcClient);
-            __tcpClient      = tcpClient;
-            __parms          = parms;
+            __state       = new NLua.Lua();
+            __playerQueue = new List<Player>();
+            __tcpClient   = tcpClient;
+            __parms       = parms;
+            __rpcClient   = new RPCClient(tcpClient);
+            __screenCompression = new RPCScreenCompression(__rpcClient);
 
             RegisterLuaFunctions();
         }
@@ -78,7 +78,7 @@ namespace RPCLibrary
             _stopPlayerQueue();
 
             // Stop low latency screen handling
-            _enableLowLatencyScreenResponse(false);
+            _enableScreenCompression(false);
 
             __state.State.Error("Lua Execution stopped");
         }
@@ -102,7 +102,7 @@ namespace RPCLibrary
                     Data      = buffer,
                 };
 
-                __screenHandling.Send(data);
+                __screenCompression.Send(data);
             }
             catch (Exception ex)
             {
@@ -128,11 +128,11 @@ namespace RPCLibrary
                         typeof(LuaEngine).GetMethod(nameof(LuaEngine._enableAutoCarriageReturn),
                         System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
             __state.DoString(@"enable_auto_carriage_return = function(enable) _enableAutoCarriageReturn(enable); end");
-            __state.RegisterFunction(nameof(_enableLowLatencyScreenResponse),
+            __state.RegisterFunction(nameof(_enableScreenCompression),
                         this,
-                        typeof(LuaEngine).GetMethod(nameof(LuaEngine._enableLowLatencyScreenResponse),
+                        typeof(LuaEngine).GetMethod(nameof(LuaEngine._enableScreenCompression),
                         System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
-            __state.DoString(@"enable_low_latency_screen_response = function(enable) _enableLowLatencyScreenResponse(enable); end");
+            __state.DoString(@"enable_screen_compression = function(enable) _enableScreenCompression(enable); end");
             __state.RegisterFunction(nameof(_clear),
                                     this,
                                     typeof(LuaEngine).GetMethod(nameof(LuaEngine._clear),
@@ -204,15 +204,15 @@ namespace RPCLibrary
             __enableAutoCarriageReturn = enable;
         }
 
-        private void _enableLowLatencyScreenResponse(bool enable)
+        private void _enableScreenCompression(bool enable)
         {
             if (enable)
             {
-                __enableLowLatencyScreenResponse = (!__screenHandling.IsRunning ? __screenHandling.Start() : true);
+                __enableScreenCompression = (!__screenCompression.IsRunning ? __screenCompression.Start() : true);
             }
             else
             {
-                __enableLowLatencyScreenResponse = (__screenHandling.IsRunning ? __screenHandling.Stop() : false);
+                __enableScreenCompression = (__screenCompression.IsRunning ? __screenCompression.Stop() : false);
             }
         }
 
