@@ -18,6 +18,7 @@
 using KeraLua;
 using NetCoreAudio;
 using NLua;
+using RPCLibrary.Array;
 using RPCLibrary.Config;
 using RPCLibrary.RPC;
 using System.Net.Sockets;
@@ -183,15 +184,32 @@ namespace RPCLibrary
                 strBuilder.Append(values.ToString());
             }
 
-            var cr   = (__enableAutoCarriageReturn ? "\n" : "");
-            var text = $"{strBuilder.ToString()}{cr}";
+            if(__enableAutoCarriageReturn)
+            {
+                strBuilder.Append("\n");
+            }
+
+            bool multiplesChunks = strBuilder.Length > RPCConstants.RECV_BUFFER_SIZE;
+            string text = strBuilder.ToString();
 
             if (__parms.ShowScreenContentOnServer)
             {
                 Console.Write(text);
             }
 
-            SendScreenResponse(text);
+            if (multiplesChunks)
+            {
+                var list = ArrayHelper.Split(strBuilder, RPCConstants.RECV_BUFFER_SIZE);
+
+                foreach(var str in list)
+                {
+                    SendScreenResponse(str);
+                }
+            }
+            else
+            {
+                SendScreenResponse(text);
+            }
         }
 
         private void _wait(int timeout)

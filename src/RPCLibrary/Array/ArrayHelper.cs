@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System.Text;
+
 namespace RPCLibrary.Array
 {
     public class ArrayHelper
@@ -42,6 +44,18 @@ namespace RPCLibrary.Array
             {
                 dest[count] = System.Convert.ToChar(aSource[count]);
             }
+        }
+
+        public static List<string> Split(StringBuilder str, int chunkSize)
+        {
+            var ret = new List<string>();
+
+            for (var i = 0; i < str.Length; i += chunkSize)
+            {
+                ret.Add(str.ToString( i, Math.Min(chunkSize, str.Length - i)));
+            }
+
+            return ret;
         }
     }
 }
