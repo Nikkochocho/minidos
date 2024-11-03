@@ -223,7 +223,7 @@ namespace RPCLibrary
                 Console.Clear();
             }
 
-            SendScreenResponse(RPCData.ANSI_CLEAR_SCREEN_CODE, true);
+            SendScreenResponse(RPCConstants.ANSI_CLEAR_SCREEN_CODE, true);
         }
 
         private void _home()
@@ -233,7 +233,7 @@ namespace RPCLibrary
                 Console.SetCursorPosition(0, 0);
             }
 
-            SendScreenResponse(RPCData.ANSI_SET_CURSOR_HOME_POSITION, true);
+            SendScreenResponse(RPCConstants.ANSI_SET_CURSOR_HOME_POSITION, true);
         }
 
         private string _getArgs()

@@ -23,19 +23,19 @@ namespace RPCLibrary.RPC
     {
         private readonly TcpClient __tcpClient;
         private readonly RPCData   __data     = new RPCData(true);
-        private readonly byte[]    __bufferIn = new byte[BufferSize];
+        private readonly byte[]    __bufferIn = new byte[RecvBufferSize];
         private BinaryWriter?      __writer   = null;
         private BinaryReader?      __reader   = null;
 
 
         public bool EnableAllExceptions { get; set; } = false;
 
-        public static int BufferSize
+        public static int RecvBufferSize
         {
             get
             {
                 // Extra bytes (for safety data transfer screen operations)
-                return (RPCData.SCREEN_BUFFER_SIZE + 512);
+                return (RPCConstants.RECV_BUFFER_SIZE + 256);
             }
         }
 

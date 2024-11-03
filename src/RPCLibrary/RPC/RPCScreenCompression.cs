@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using RPCLibrary.Array;
 using RPCLibrary.Compression;
 using System.Collections.Concurrent;
 using System.Text;
@@ -40,7 +39,7 @@ namespace RPCLibrary.RPC
         {
             _ = Task.Factory.StartNew(() =>
             {
-                MemoryStream   stream     = new MemoryStream(RPCData.SCREEN_BUFFER_SIZE*2);
+                MemoryStream   stream     = new MemoryStream(RPCClient.RecvBufferSize);
                 BinaryWriter   writer     = new BinaryWriter(stream);
                 RPCData        bufferData = new RPCData()
                 {
@@ -62,10 +61,9 @@ namespace RPCLibrary.RPC
 
                         __rpcClient.Serialize(writer, data);
 
-                        if (stream.Length >= RPCData.SCREEN_BUFFER_SIZE)
+                        if (stream.Length >= RPCConstants.RECV_BUFFER_SIZE)
                         {
-                            bufferData.DataSize = (int) stream.Length;
-                            System.Array.Copy(stream.GetBuffer(), bufferData.Data, bufferData.DataSize);
+                            bufferData.Data = stream.ToArray();
 
                             __rpcClient.Send(bufferData);
 

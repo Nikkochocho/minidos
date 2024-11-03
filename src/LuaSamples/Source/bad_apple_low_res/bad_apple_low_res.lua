@@ -44,14 +44,13 @@ function play_decoder(aFrameBuffer)
 			end
 		end
 
-		frame_buffer = frame_buffer.."\n"
+		print(frame_buffer)
+		frame_buffer = ""
 		lcount = lcount + 1
 		
 		if(lcount > __MAX_ROWS)  then
 			home()
-			print(frame_buffer)
 			wait(__FREQ_SLEEP)
-			frame_buffer = ""
 			lcount = 0
 		end
 	end
@@ -61,6 +60,5 @@ end
 -- Main program
 
 --play(get_current_path().."bad_apple.wav")
---enable_screen_compression(false)
 play_decoder(frames)
 clear();

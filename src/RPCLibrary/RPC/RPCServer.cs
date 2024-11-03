@@ -138,7 +138,7 @@ namespace RPCLibrary.RPC
                                 var ext = (data.IsZipped ? LuaEngineConstants.ZIP_EXTENSION : LuaEngineConstants.LUA_EXTENSION);
 
                                 luaFileName = System.Text.Encoding.Default.GetString(data.Data);
-                                isShare     = luaFileName.ToLower().Contains(RPCData.SERVER_SHARED_FILE_PROTOCOL);
+                                isShare     = luaFileName.ToLower().Contains(RPCConstants.SERVER_SHARED_FILE_PROTOCOL);
                                 isZipped    = data.IsZipped;
 
                                 UpdateProgress($"FOUND ==> [{luaFileName}] ");
@@ -160,9 +160,9 @@ namespace RPCLibrary.RPC
                                 }
                                 else
                                 {
-                                    var pos = luaFileName.IndexOf(RPCData.SERVER_SHARED_FILE_PROTOCOL);
+                                    var pos = luaFileName.IndexOf(RPCConstants.SERVER_SHARED_FILE_PROTOCOL);
 
-                                    pos += RPCData.SERVER_SHARED_FILE_PROTOCOL.Length;
+                                    pos += RPCConstants.SERVER_SHARED_FILE_PROTOCOL.Length;
                                     luaFileName = luaFileName.Remove(0, pos);
                                     fileName    = $"{__parms.SharedFolder}/{luaFileName}";
                                     exit = data.EndOfData;

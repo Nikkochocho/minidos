@@ -19,19 +19,6 @@ namespace RPCLibrary.RPC
 {
     public class RPCData
     {
-        // ANSI Terminal codes
-        public const string ANSI_CLEAR_SCREEN_CODE               = "\033[2J";
-        public const string ANSI_SET_CURSOR_HOME_POSITION        = "\033[H";
-
-        public static char[] ANSI_CLEAR_SCREEN_CODE_ARRAY        = ANSI_CLEAR_SCREEN_CODE.ToArray();
-        public static char[] ANSI_SET_CURSOR_HOME_POSITION_ARRAY = ANSI_SET_CURSOR_HOME_POSITION.ToArray();
-
-        // Resources that executes on server
-        public const string SERVER_SHARED_FILE_PROTOCOL          = "share://";
-
-        public const int DEFAULT_BLOCK_SIZE                      = 512;
-        public const int SCREEN_BUFFER_SIZE                      = 5120;
-
         public const int TYPE_LUA_FILENAME                       = 0;
         public const int TYPE_LUA_PARMS                          = 1;
         public const int TYPE_LUA_EXECUTABLE                     = 2;

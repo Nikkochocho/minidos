@@ -97,7 +97,6 @@ end
 -- Main program
 
 --play(get_current_path().."bad_apple.wav")
---enable_auto_carriage_return(false)
 enable_screen_compression(true)
 play_decoder(frames)
 clear();
