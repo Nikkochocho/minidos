@@ -167,7 +167,10 @@ namespace RPCLibrary.RPC
                             goto case RPCData.TYPE_LUA_ANSI_COMMAND_RESPONSE;
                     case RPCData.TYPE_LUA_ANSI_COMMAND_RESPONSE:
                         {
-                            ArrayHelper.Convert(data.Data, ref __screenFrameBuffer, data.DataSize);
+                            if (data.DataSize != 0)
+                            {
+                                ArrayHelper.Convert(data.Data, ref __screenFrameBuffer, data.DataSize);
+                            }
                             ScreenResponseHandling(__screenFrameBuffer);
                         }
                         break;
