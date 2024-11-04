@@ -7,13 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetCoreAudio" Version="2.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="NLua" Version="1.7.3" />
+    <Compile Remove="DataProtocol\**" />
+    <EmbeddedResource Remove="DataProtocol\**" />
+    <None Remove="DataProtocol\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DataProtocol\" />
+    <PackageReference Include="NetCoreAudio" Version="2.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="NLua" Version="1.7.3" />
   </ItemGroup>
 
 </Project>
