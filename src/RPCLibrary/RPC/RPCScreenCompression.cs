@@ -43,7 +43,7 @@ namespace RPCLibrary.RPC
                 BinaryWriter   writer     = new BinaryWriter(stream);
                 RPCData        bufferData = new RPCData()
                 {
-                    Type = RPCData.TYPE_LUA_SCREEN_LOW_LATENCY_RESPONSE,
+                    Type = RPCData.TYPE_LUA_COMPRESSED_SCREEN_RESPONSE,
                     IsZipped  = false,
                     EndOfData = false,
                 };

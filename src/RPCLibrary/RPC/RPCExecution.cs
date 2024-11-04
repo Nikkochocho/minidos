@@ -175,7 +175,7 @@ namespace RPCLibrary.RPC
                         }
                         break;
 
-                    case RPCData.TYPE_LUA_SCREEN_LOW_LATENCY_RESPONSE:
+                    case RPCData.TYPE_LUA_COMPRESSED_SCREEN_RESPONSE:
                         {
                             stream.Position = 0;
 

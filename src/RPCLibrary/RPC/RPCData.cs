@@ -19,12 +19,12 @@ namespace RPCLibrary.RPC
 {
     public class RPCData
     {
-        public const int TYPE_LUA_FILENAME                       = 0;
-        public const int TYPE_LUA_PARMS                          = 1;
-        public const int TYPE_LUA_EXECUTABLE                     = 2;
-        public const int TYPE_LUA_SCREEN_RESPONSE                = 3;
-        public const int TYPE_LUA_ANSI_COMMAND_RESPONSE          = 4;
-        public const int TYPE_LUA_SCREEN_LOW_LATENCY_RESPONSE    = 5;
+        public const int TYPE_LUA_FILENAME                    = 0;
+        public const int TYPE_LUA_PARMS                       = 1;
+        public const int TYPE_LUA_EXECUTABLE                  = 2;
+        public const int TYPE_LUA_SCREEN_RESPONSE             = 3;
+        public const int TYPE_LUA_ANSI_COMMAND_RESPONSE       = 4;
+        public const int TYPE_LUA_COMPRESSED_SCREEN_RESPONSE  = 5;
 
         private bool __noAlloc = false;
         private int __dataSize = 0;
