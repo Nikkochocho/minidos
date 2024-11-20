@@ -20,7 +20,7 @@ local __MAX_COLS   = 79
 local __FREQ_SLEEP = 23
 
 local base_path = string.match(get_current_path(), '^(.-)[^/\\]*$')
-package.path = string.format("%s;%s?.lua", package.path, base_path)
+package.path = string.format("%s;%s?.lua.data;%s?.lua", package.path, base_path, base_path)
 
 require("frames_compressed")
 
@@ -61,7 +61,5 @@ end
 -- Main program
 
 --play(get_current_path().."bad_apple.wav")
---enable_auto_carriage_return(false)
-enable_low_latency_screen_response(true)
 play_decoder(frames)
 clear();
