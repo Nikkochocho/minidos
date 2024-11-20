@@ -18,7 +18,7 @@
 local __FREQ_SLEEP = 23
 
 local base_path = string.match(get_current_path(), '^(.-)[^/\\]*$')
-package.path = string.format("%s;%s?.lua.data;%s?.lua", package.path, base_path, base_path)
+package.path = string.format("%s;%s?.data;%s?.lua", package.path, base_path, base_path)
 
 require("frames_hi_res")
 
