@@ -15,19 +15,30 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ]]--
 
+local __FREQ_SLEEP = 23
 
 local base_path = string.match(get_current_path(), '^(.-)[^/\\]*$')
-package.path = string.format("%s;%s?.lua", package.path, base_path)
+package.path = string.format("%s;%s?.data;%s?.lua", package.path, base_path, base_path)
 
 require("frames_hi_res")
 
-enable_auto_carriage_return(false)
+
+function play_decoder(aFrameBuffer)
+	clear()
+	
+	for i, aFrameRow in ipairs(aFrameBuffer) do	
+		for j, frame_buffer in ipairs(aFrameRow) do
+			print(frame_buffer)
+		end
+
+		home()
+		wait(__FREQ_SLEEP)
+	end
+end
+
+
+-- Main program
 
 play(get_current_path().."bad_apple.wav")
-clear()
-
-for i = 0, #frames do
-   home()
-   print(frames[i])
-   wait(23)
-end
+play_decoder(frames)
+clear();

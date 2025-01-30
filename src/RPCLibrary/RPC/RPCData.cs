@@ -19,19 +19,15 @@ namespace RPCLibrary.RPC
 {
     public class RPCData
     {
-        // ANSI Terminal codes
-        public const string ANSI_CLEAR_SCREEN_CODE = "\033[2J";
-        public const string ANSI_SET_CURSOR_HOME_POSITION = "\033[H";
+        public const int TYPE_LUA_FILENAME                    = 0;
+        public const int TYPE_LUA_PARMS                       = 1;
+        public const int TYPE_LUA_EXECUTABLE                  = 2;
+        public const int TYPE_LUA_SCREEN_RESPONSE             = 3;
+        public const int TYPE_LUA_ANSI_COMMAND_RESPONSE       = 4;
+        public const int TYPE_LUA_COMPRESSED_SCREEN_RESPONSE  = 5;
 
-        // Resources that executes on server
-        public const string SERVER_SHARED_FILE_PROTOCOL = "share://";
-
-        public const int DEFAULT_BLOCK_SIZE = 512;
-
-        public const int TYPE_LUA_FILENAME = 0;
-        public const int TYPE_LUA_PARMS = 1;
-        public const int TYPE_LUA_EXECUTABLE = 2;
-        public const int TYPE_LUA_SCREEN_RESPONSE = 3;
+        private bool __noAlloc = false;
+        private int __dataSize = 0;
 
         public int Type { get; set; }
         public bool EndOfData { get; set; }
@@ -41,12 +37,31 @@ namespace RPCLibrary.RPC
         {
             get
             {
-                return Data != null ? Data.Length : 0;
+                if (!__noAlloc)
+                {
+                    return Data != null ? Data.Length : 0;
+                }
+                else
+                {
+                    return __dataSize;
+                }
             }
             set
             {
-                Data = new byte[value];
+                if (!__noAlloc)
+                {
+                    Data = new byte[value];
+                }
+                else
+                {
+                    __dataSize = value;
+                }
             }
+        }
+
+        public RPCData(bool noAlloc = false)
+        {
+            __noAlloc = noAlloc;
         }
     }
 }

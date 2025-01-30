@@ -22,11 +22,32 @@ namespace RPCLibrary.RPC
     public class RPCClient
     {
         private readonly TcpClient __tcpClient;
-        private BinaryWriter? __writer = null;
-        private BinaryReader? __reader = null;
+        private readonly RPCData   __data     = new RPCData(true);
+        private readonly byte[]    __bufferIn = new byte[RecvBufferSize];
+        private BinaryWriter?      __writer   = null;
+        private BinaryReader?      __reader   = null;
 
 
         public bool EnableAllExceptions { get; set; } = false;
+
+        public static int RecvBufferSize
+        {
+            get
+            {
+                // Extra bytes (for safety data transfer screen operations)
+                return (RPCConstants.RECV_BUFFER_SIZE + 256);
+            }
+        }
+
+        public RPCData Data
+        {
+            get
+            {
+                __data.Data = __data.Data ?? __bufferIn;
+
+                return __data;
+            }
+        }
 
 
         private void Init()
@@ -74,24 +95,86 @@ namespace RPCLibrary.RPC
 
             return false;
         }
+
         public bool Send(RPCData data)
         {
-            if (__tcpClient.Connected)
-            {
-                try
-                {
-                    __writer.Write(data.Type);
-                    __writer.Write(data.EndOfData);
-                    __writer.Write(data.IsZipped);
-                    __writer.Write(data.DataSize);
+            return Serialize(__writer, data);
+        }
 
-                    if (data.Data != null)
-                    {
-                        __writer.Write(data.Data);
-                    }
-                    return true;
+        public bool Serialize(BinaryWriter? writer, RPCData data)
+        {
+            try
+            {
+                writer.Write(data.Type);
+                writer.Write(data.EndOfData);
+                writer.Write(data.IsZipped);
+                writer.Write(data.DataSize);
+
+                if (data.Data != null)
+                {
+                    writer.Write(data.Data);
                 }
-                catch (Exception ex)
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            return false;
+        }
+
+        public bool Deserialize(Stream stream, out RPCData data)
+        {
+            try
+            {
+                int   size;
+
+                data      = __data;
+                data.Data = __bufferIn;
+
+                // Type
+                size = sizeof(int);
+                if (stream.Read(__bufferIn, 0, size) != size)
+                    return false;
+
+                data.Type = BitConverter.ToInt32(__bufferIn, 0);
+
+                // EndOfData
+                size = sizeof(bool);
+                if (stream.Read(__bufferIn, 0, size) != size)
+                    return false;
+
+                data.EndOfData = BitConverter.ToBoolean(__bufferIn, 0);
+
+                // IsZipped
+                size = sizeof(bool);
+                if (stream.Read(__bufferIn, 0, size) != size)
+                    return false;
+
+                data.IsZipped = BitConverter.ToBoolean(__bufferIn, 0);
+
+                // DataSize
+                size = sizeof(int);
+                if (stream.Read(__bufferIn, 0, size) != size)
+                    return false;
+
+                data.DataSize = BitConverter.ToInt32(__bufferIn, 0);
+
+                // Data
+                if (data.DataSize > 0)
+                {
+                    if (stream.Read(__bufferIn, 0, data.DataSize) != data.DataSize)
+                        return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                data = default;
+
+                if (ex.GetType() != typeof(EndOfStreamException) && EnableAllExceptions)
                 {
                     Console.WriteLine(ex.Message);
                 }
@@ -100,16 +183,16 @@ namespace RPCLibrary.RPC
             return false;
         }
 
-        public bool Recv(BinaryReader? reader, out RPCData data)
+        public bool Deserialize(BinaryReader? reader, out RPCData data)
         {
             try
             {
-                data = new RPCData();
+                data = __data;
 
-                data.Type = reader.ReadInt32();
+                data.Type      = reader.ReadInt32();
                 data.EndOfData = reader.ReadBoolean();
-                data.IsZipped = reader.ReadBoolean();
-                data.DataSize = reader.ReadInt32();
+                data.IsZipped  = reader.ReadBoolean();
+                data.DataSize  = reader.ReadInt32();
 
                 if (data.DataSize > 0)
                 {
@@ -133,7 +216,12 @@ namespace RPCLibrary.RPC
 
         public bool Recv(out RPCData data)
         {
-            return Recv(__reader, out data);
+            return Deserialize(__reader, out data);
+        }
+
+        public bool RecvFromStream(ref RPCData data)
+        {
+            return Deserialize(__tcpClient.GetStream(), out data);
         }
     }
 }

@@ -29,6 +29,8 @@ function line(radius) -- radius in [0, 9]
 	print("\n")
 end
 
+-- Main program 
+
 local zero = 20 - 20
 
 enable_auto_carriage_return(false)

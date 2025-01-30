@@ -25,6 +25,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using RPCLibrary.RPC;
+using Cosmos.Core.Memory;
+using Cosmos.Core;
+using System.Threading;
 
 
 namespace MiniDOS.Shell

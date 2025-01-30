@@ -15,23 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using RPCLibrary.Array;
+using RPCLibrary.Compression;
 using System.Text;
 
 namespace RPCLibrary.RPC
 {
     public class RPCExecution
     {
-        private readonly RPCClient __client;
+        private readonly RPCClient      __client;
+        private char[]                  __screenFrameBuffer;
 
         public RPCExecution()
         {
             __client = new RPCClient();
+            __screenFrameBuffer = new char[RPCConstants.SCREEN_FRAME_BUFFER_SIZE];
         }
 
         public bool Execute(string filepath, string host, int port, string? cmdLineArgs)
         {
             FileStream? fs = default;
-            bool isShared = filepath.ToLower().Contains(RPCData.SERVER_SHARED_FILE_PROTOCOL);
+            bool isShared = filepath.ToLower().Contains(RPCConstants.SERVER_SHARED_FILE_PROTOCOL);
 
             // If is a resource present on server is not needed send file content data,
             // so open file is not needed
@@ -61,7 +65,7 @@ namespace RPCLibrary.RPC
             string fileName = isShared ? filepath : Path.GetFileName(filepath);
             bool isZippedFile = fileName.ToLower().Contains(LuaEngineConstants.ZIP_EXTENSION);
             byte[] aFileName = Encoding.Default.GetBytes(fileName);
-            byte[] buffer = new byte[RPCData.DEFAULT_BLOCK_SIZE];
+            byte[] buffer = new byte[RPCConstants.DEFAULT_BLOCK_SIZE];
             int bytesRead = aFileName.Length;
             RPCData data = new RPCData()
             {
@@ -105,7 +109,7 @@ namespace RPCLibrary.RPC
             // If is a resource present on server, is not needed send file content data
             if (!isShared)
             {
-                bytesRead = RPCData.DEFAULT_BLOCK_SIZE;
+                bytesRead = RPCConstants.DEFAULT_BLOCK_SIZE;
                 data.Type = RPCData.TYPE_LUA_EXECUTABLE;
                 data.DataSize = bytesRead;
                 data.Data = buffer;
@@ -114,13 +118,13 @@ namespace RPCLibrary.RPC
                 while (!data.EndOfData)
                 {
                     bytesRead = fs.Read(buffer, 0, buffer.Length);
-                    data.EndOfData = bytesRead != RPCData.DEFAULT_BLOCK_SIZE;
+                    data.EndOfData = bytesRead != RPCConstants.DEFAULT_BLOCK_SIZE;
 
                     if (data.EndOfData)
                     {
                         // Clean unused extra byte array
                         data.DataSize = bytesRead;
-                        Array.Copy(buffer, data.Data, bytesRead);
+                        System.Array.Copy(buffer, data.Data, bytesRead);
                     }
 
                     ret = __client.Send(data);
@@ -148,15 +152,64 @@ namespace RPCLibrary.RPC
 
         private void ReceiveLuaScreenResponse()
         {
+            RPCData      data   = __client.Data;
+            MemoryStream stream = new MemoryStream(data.Data);
+
             // Receive and process Lua script responses
-            while (__client.Recv(out RPCData data))
+            while (__client.RecvFromStream(ref data))
             {
+                int dataSize = data.DataSize;
+
                 switch (data.Type)
                 {
                     case RPCData.TYPE_LUA_SCREEN_RESPONSE:
-                        string strData = Encoding.Default.GetString(data.Data);
+                            System.Array.Clear(__screenFrameBuffer);
+                            goto case RPCData.TYPE_LUA_ANSI_COMMAND_RESPONSE;
+                    case RPCData.TYPE_LUA_ANSI_COMMAND_RESPONSE:
+                        {
+                            if (data.DataSize != 0)
+                            {
+                                ArrayHelper.Convert(data.Data, ref __screenFrameBuffer, data.DataSize);
+                            }
+                            ScreenResponseHandling(__screenFrameBuffer);
+                        }
+                        break;
 
-                        ScreenResponseHandling(strData);
+                    case RPCData.TYPE_LUA_COMPRESSED_SCREEN_RESPONSE:
+                        {
+                            stream.Position = 0;
+
+                            while (stream.Position < dataSize)
+                            {
+                                if (__client.Deserialize(stream, out RPCData screenData))
+                                {
+                                    switch (screenData.Type)
+                                    {
+                                        case RPCData.TYPE_LUA_SCREEN_RESPONSE:
+                                            //System.Array.Clear(__screenBuffer);
+                                            BitCompression.UnCompress(screenData.Data, __screenFrameBuffer, screenData.DataSize);
+                                            break;
+
+                                        case RPCData.TYPE_LUA_ANSI_COMMAND_RESPONSE:
+                                            ArrayHelper.Convert(screenData.Data, ref __screenFrameBuffer, screenData.DataSize);
+                                            break;
+                                        default:
+                                            Console.WriteLine("Unknown command (low latency response)");
+                                            break;
+                                    }
+
+                                    ScreenResponseHandling(__screenFrameBuffer, true);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Error reading low latency screen data");
+                                }
+                            }
+                        }
+                        break;
+
+                    default:
+                        Console.WriteLine("Unknown command");
                         break;
                 }
 
@@ -167,22 +220,27 @@ namespace RPCLibrary.RPC
             }
         }
 
-        private void ScreenResponseHandling(string data)
+        private void ScreenResponseHandling(char[] data, bool newLine = false)
         {
-            switch (data) // Handle ANSI escape commands
-
+            if (ArrayHelper.Contains(data, RPCConstants.ANSI_CLEAR_SCREEN_CODE_ARRAY))
             {
-                case RPCData.ANSI_CLEAR_SCREEN_CODE:
-                    Console.Clear();
-                    break;
+                Console.Clear();
+                return;
+            }
 
-                case RPCData.ANSI_SET_CURSOR_HOME_POSITION:
-                    Console.SetCursorPosition(0, 0);
-                    break;
+            if (ArrayHelper.Contains(data, RPCConstants.ANSI_SET_CURSOR_HOME_POSITION_ARRAY))
+            {
+                Console.SetCursorPosition(0, 0);
+                return;
+            }
 
-                default:
-                    Console.Write(data);
-                    break;
+            if (newLine)
+            {
+                Console.WriteLine(data);
+            }
+            else
+            {
+                Console.Write(data);
             }
         }
     }
